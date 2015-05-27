@@ -56,13 +56,30 @@ PayrollExport/bin/Release/PayrollExportFiles/ExportBackup/209_20150406_20150412.
 *.sln.docstates 
 
 # Build results 
-[Dd]ebug/ 
+PayrollExport/[Bb]in/[Dd]ebug/ 
 [Dd]ebugPublic/ 
-[Rr]elease/ 
+PayrollExport/[Bb]in/[Rr]elease/ 
 [Rr]eleases/ 
 x64/ 
 x86/ 
 build/ 
 bld/ 
-[Bb]in/ 
-[Oo]bj/ 
+PayrollExport/[Bb]in/ 
+PayrollExport/[Oo]bj/
+_ReSharper.PayrollExport/
+*.log
+*.manifest
+*.cache
+PayrollExport/obj/x86/Release/PayrollExport.csproj.FileListAbsolute.txt
+_ReSharper.PayrollExport/BuildScriptCache/.crc
+*.dat
+_ReSharper.PayrollExport/BuildScriptCache/.crc
+_ReSharper.PayrollExport/BuildScriptCache/.crc
+*.crc
+PayrollExport/bin/Release/Configuration/PayrollExportConfig.xml
+_ReSharper.PayrollExport/BuildScriptCache/.crc
+*.crc
+*.dat
+*.crc
+*.crc
+*.crc
