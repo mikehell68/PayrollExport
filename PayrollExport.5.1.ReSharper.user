@@ -1,0 +1,111 @@
+<Configuration>
+  <SettingsComponent>
+    <string />
+    <integer />
+    <boolean>
+      <setting name="SolutionAnalysisEnabled">False</setting>
+    </boolean>
+  </SettingsComponent>
+  <CompletionStatisticsManager>
+    <ItemStatistics item="Default">
+      <Item value="string" priority="3" />
+      <Item value="if" priority="1" />
+      <Item value="value" priority="2" />
+      <Item value="return" priority="1" />
+      <Item value="QuoteIfCommaExists`0" priority="0" />
+      <Item value="public" priority="1" />
+      <Item value="ExportPeriod`0" priority="0" />
+      <Item value="PayrollExportConfiguration`0" priority="1" />
+      <Item value="static" priority="0" />
+      <Item value="int" priority="1" />
+      <Item value="ExportPeriodEnabled" priority="3" />
+      <Item value="false" priority="0" />
+      <Item value="DefaultExportPeriod" priority="2" />
+      <Item value="e" priority="0" />
+      <Item value="ExportPeriods" priority="0" />
+      <Item value="new" priority="0" />
+      <Item value="ExportPeriod" priority="0" />
+      <Item value="PeriodIndex" priority="0" />
+      <Item value="defaultExportPeriod" priority="0" />
+      <Item value="OneWeek" priority="0" />
+      <Item value="DisplayName" priority="1" />
+      <Item value="else" priority="0" />
+      <Item value="_payrollExportModel" priority="0" />
+      <Item value="ExportPeriodEnum`0" priority="0" />
+    </ItemStatistics>
+    <ItemStatistics item="Qualified:System.String">
+      <Item value="Contains`0" priority="0" />
+    </ItemStatistics>
+    <ItemStatistics item="Qualified:@System.Int32">
+      <Item value="Parse`0" priority="0" />
+    </ItemStatistics>
+    <ItemStatistics item="Qualified:System.Collections.Generic.List`1">
+      <Item value="Add`0" priority="1" />
+    </ItemStatistics>
+    <ItemStatistics item="Qualified:System.Collections.Generic.IEnumerable`1">
+      <Item value="Where`1" priority="0" />
+      <Item value="FirstOrDefault`1" priority="1" />
+    </ItemStatistics>
+    <ItemStatistics item="Qualified:System.Xml.Linq.XElement">
+      <Item value="Attribute`0" priority="0" />
+    </ItemStatistics>
+    <ItemStatistics item="Qualified:System.Xml.Linq.XAttribute">
+      <Item value="Value" priority="0" />
+    </ItemStatistics>
+    <ItemStatistics item="Qualified:System.Int32">
+      <Item value="ToString`0" priority="0" />
+    </ItemStatistics>
+    <ItemStatistics item="Qualified:@PayrollExport.PayrollExportConfiguration">
+      <Item value="ExportPeriodEnabled" priority="0" />
+      <Item value="DefaultExportPeriod" priority="1" />
+    </ItemStatistics>
+    <ItemStatistics item="Qualified:System.Windows.Forms.ComboBox">
+      <Item value="Enabled" priority="1" />
+    </ItemStatistics>
+  </CompletionStatisticsManager>
+  <RecentFiles>
+    <RecentFiles>
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/d:Configuration/f:PayrollExportConfig.xml" caret="222" fromTop="3" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:Program.cs" caret="1041" fromTop="20" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportMainForm.cs" caret="1921" fromTop="25" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportEnums.cs" caret="44" fromTop="2" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportConfiguration.cs" caret="4049" fromTop="27" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportModel.cs" caret="10695" fromTop="20" />
+    </RecentFiles>
+    <RecentEdits>
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportModel.cs" caret="14001" fromTop="36" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportModel.cs" caret="4764" fromTop="17" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportModel.cs" caret="4905" fromTop="28" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportModel.cs" caret="4757" fromTop="18" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportModel.cs" caret="7172" fromTop="20" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportModel.cs" caret="7572" fromTop="31" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportModel.cs" caret="8450" fromTop="33" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportEnums.cs" caret="0" fromTop="0" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportConfiguration.cs" caret="5783" fromTop="23" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportConfiguration.cs" caret="5010" fromTop="21" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportConfiguration.cs" caret="4207" fromTop="21" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportConfiguration.cs" caret="5013" fromTop="36" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportConfiguration.cs" caret="6752" fromTop="27" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportModel.cs" caret="3638" fromTop="25" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportMainForm.cs" caret="1546" fromTop="26" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/d:Configuration/f:PayrollExportConfig.xml" caret="225" fromTop="3" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportModel.cs" caret="1268" fromTop="17" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportConfiguration.cs" caret="981" fromTop="21" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportConfiguration.cs" caret="2851" fromTop="20" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportConfiguration.cs" caret="3149" fromTop="17" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportConfiguration.cs" caret="3682" fromTop="21" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportConfiguration.cs" caret="3955" fromTop="26" />
+    </RecentEdits>
+  </RecentFiles>
+  <NAntValidationSettings>
+    <NAntPath value="" />
+  </NAntValidationSettings>
+  <UnitTestRunner>
+    <Providers />
+  </UnitTestRunner>
+  <UnitTestRunnerNUnit>
+    <NUnitInstallDir IsNull="False">
+    </NUnitInstallDir>
+    <UseAddins>Never</UseAddins>
+  </UnitTestRunnerNUnit>
+</Configuration>

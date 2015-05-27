@@ -1,8 +1,0 @@
-E:\Visual Studio 2010\Projects\PayrollExport\PayrollExport\bin\Debug\Configuration\PayrollExportConfig.xml
-E:\Visual Studio 2010\Projects\PayrollExport\PayrollExport\bin\Debug\PayrollExport.exe
-E:\Visual Studio 2010\Projects\PayrollExport\PayrollExport\bin\Debug\PayrollExport.pdb
-E:\Visual Studio 2010\Projects\PayrollExport\PayrollExport\obj\x86\Debug\PayrollExport._payrollExportMainForm.resources
-E:\Visual Studio 2010\Projects\PayrollExport\PayrollExport\obj\x86\Debug\PayrollExport.Properties.Resources.resources
-E:\Visual Studio 2010\Projects\PayrollExport\PayrollExport\obj\x86\Debug\PayrollExport.csproj.GenerateResource.Cache
-E:\Visual Studio 2010\Projects\PayrollExport\PayrollExport\obj\x86\Debug\PayrollExport.exe
-E:\Visual Studio 2010\Projects\PayrollExport\PayrollExport\obj\x86\Debug\PayrollExport.pdb

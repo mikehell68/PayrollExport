@@ -48,3 +48,21 @@ PayrollExport/bin/Release/PayrollExportFiles/ExportBackup/209_20150406_20150412.
 PayrollExport/bin/Release/PayrollExportFiles/ExportBackup/209_20150406_20150412.csv.20150527_120039
 *.exe
 *.pdb
+
+# User-specific files 
+*.suo 
+*.user 
+*.userosscache 
+*.sln.docstates 
+
+# Build results 
+[Dd]ebug/ 
+[Dd]ebugPublic/ 
+[Rr]elease/ 
+[Rr]eleases/ 
+x64/ 
+x86/ 
+build/ 
+bld/ 
+[Bb]in/ 
+[Oo]bj/ 
