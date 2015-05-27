@@ -1,0 +1,214 @@
+2015/05/11 14:02:11:info: Logging initialised
+2015/05/11 14:02:11:info: PayrollExport.EXE Started
+2015/05/11 14:02:11:info: Loading Configuration File
+2015/05/11 14:02:11:info: 
+Payroll Export Configuration
+ExportFileSaveLocation: c:\PayrollExport\Export
+ExportFileBackupLocation: c:\PayrollExport\Export\Backup
+UseDecimalHourFormat: True
+ExportHourlyPaid: True
+ExportSalaryPaid: False
+ExportEndDay: Sunday
+UseExportEndDay: True
+UseSSN: False
+WorkedJobsPerRow: 4
+
+2015/05/11 14:02:21:info: PayrollExport.EXE Ended
+2015/05/11 14:02:56:info: Logging initialised
+2015/05/11 14:02:56:info: PayrollExport.EXE Started
+2015/05/11 14:02:56:info: Loading Configuration File
+2015/05/11 14:02:56:info: 
+Payroll Export Configuration
+ExportFileSaveLocation: c:\PayrollExport\Export
+ExportFileBackupLocation: c:\PayrollExport\Export\Backup
+UseDecimalHourFormat: True
+ExportHourlyPaid: True
+ExportSalaryPaid: False
+ExportEndDay: Sunday
+UseExportEndDay: True
+UseSSN: False
+WorkedJobsPerRow: 4
+
+2015/05/11 14:02:58:info: PayrollExport.EXE Ended
+2015/05/11 14:03:35:info: Logging initialised
+2015/05/11 14:03:35:info: PayrollExport.EXE Started
+2015/05/11 14:03:35:info: Loading Configuration File
+2015/05/11 14:03:35:info: 
+Payroll Export Configuration
+ExportFileSaveLocation: c:\PayrollExport\Export
+ExportFileBackupLocation: c:\PayrollExport\Export\Backup
+UseDecimalHourFormat: True
+ExportHourlyPaid: True
+ExportSalaryPaid: False
+ExportEndDay: Sunday
+UseExportEndDay: True
+UseSSN: False
+WorkedJobsPerRow: 4
+
+2015/05/11 14:04:34:info: Loading scripts
+2015/05/11 14:04:34:info: 1 scripts loaded 
+2015/05/11 14:10:53:info: Logging initialised
+2015/05/11 14:10:53:info: PayrollExport.EXE Started
+2015/05/11 14:10:53:info: Loading Configuration File
+2015/05/11 14:10:53:info: 
+Payroll Export Configuration
+ExportFileSaveLocation: c:\PayrollExport\Export
+ExportFileBackupLocation: c:\PayrollExport\Export\Backup
+UseDecimalHourFormat: True
+ExportHourlyPaid: True
+ExportSalaryPaid: False
+ExportEndDay: Sunday
+UseExportEndDay: True
+UseSSN: False
+WorkedJobsPerRow: 4
+
+2015/05/11 14:10:56:info: Loading scripts
+2015/05/11 14:10:56:info: 1 scripts loaded 
+2015/05/11 14:14:01:info: PayrollExport.EXE Ended
+2015/05/11 14:14:10:info: Logging initialised
+2015/05/11 14:14:10:info: PayrollExport.exe Started
+2015/05/11 14:14:10:info: Loading Configuration File
+2015/05/11 14:14:10:info: 
+Payroll Export Configuration
+ExportFileSaveLocation: c:\PayrollExport\Export
+ExportFileBackupLocation: c:\PayrollExport\Export\Backup
+UseDecimalHourFormat: True
+ExportHourlyPaid: True
+ExportSalaryPaid: False
+ExportEndDay: Sunday
+UseExportEndDay: True
+UseSSN: False
+WorkedJobsPerRow: 4
+
+2015/05/11 14:14:13:info: Loading scripts
+2015/05/11 14:14:13:info: 1 scripts loaded 
+2015/05/11 14:14:40:info: PayrollExport.exe Ended
+2015/05/11 14:15:12:info: Logging initialised
+2015/05/11 14:15:12:info: PayrollExport.EXE Started
+2015/05/11 14:15:12:info: Loading Configuration File
+2015/05/11 14:15:12:info: 
+Payroll Export Configuration
+ExportFileSaveLocation: c:\PayrollExport\Export
+ExportFileBackupLocation: c:\PayrollExport\Export\Backup
+UseDecimalHourFormat: True
+ExportHourlyPaid: True
+ExportSalaryPaid: False
+ExportEndDay: Sunday
+UseExportEndDay: True
+UseSSN: False
+WorkedJobsPerRow: 4
+
+2015/05/11 14:15:15:info: Loading scripts
+2015/05/11 14:15:15:info: 1 scripts loaded 
+2015/05/11 14:15:31:info: PayrollExport.EXE Ended
+2015/05/11 14:25:41:info: Logging initialised
+2015/05/11 14:25:41:info: PayrollExport.EXE Started
+2015/05/11 14:25:41:info: Loading Configuration File
+2015/05/11 14:25:41:info: 
+Payroll Export Configuration
+ExportFileSaveLocation: c:\PayrollExport\Export
+ExportFileBackupLocation: c:\PayrollExport\Export\Backup
+UseDecimalHourFormat: True
+ExportHourlyPaid: True
+ExportSalaryPaid: False
+ExportEndDay: Sunday
+UseExportEndDay: True
+UseSSN: False
+WorkedJobsPerRow: 4
+
+2015/05/11 14:25:57:info: PayrollExport.EXE Ended
+2015/05/11 14:26:34:info: Logging initialised
+2015/05/11 14:26:34:info: PayrollExport.EXE Started
+2015/05/11 14:26:34:info: Loading Configuration File
+2015/05/11 14:26:34:info: 
+Payroll Export Configuration
+ExportFileSaveLocation: c:\PayrollExport\Export
+ExportFileBackupLocation: c:\PayrollExport\Export\Backup
+UseDecimalHourFormat: True
+ExportHourlyPaid: True
+ExportSalaryPaid: False
+ExportEndDay: Sunday
+UseExportEndDay: True
+UseSSN: False
+WorkedJobsPerRow: 4
+
+2015/05/11 14:26:45:info: PayrollExport.EXE Ended
+2015/05/11 14:31:07:info: Logging initialised
+2015/05/11 14:31:07:info: PayrollExport.EXE Started
+2015/05/11 14:31:07:info: Loading Configuration File
+2015/05/11 14:31:07:info: 
+Payroll Export Configuration
+ExportFileSaveLocation: c:\PayrollExport\Export
+ExportFileBackupLocation: c:\PayrollExport\Export\Backup
+UseDecimalHourFormat: True
+ExportHourlyPaid: True
+ExportSalaryPaid: False
+ExportEndDay: Sunday
+UseExportEndDay: True
+UseSSN: False
+WorkedJobsPerRow: 4
+
+2015/05/11 14:31:19:info: Begin DoExort()
+2015/05/11 14:31:19:info: Generating payroll export for 06/04/2015 00:00:00 to 12/04/2015 00:00:00
+2015/05/11 14:31:19:info: Loading scripts
+2015/05/11 14:31:19:info: 1 scripts loaded 
+2015/05/11 14:31:19:info: Begin GetPayrollDataFromAztec()
+2015/05/11 14:31:31:info: Payroll export query generated 42 rows
+2015/05/11 14:31:31:info: End GetPayrollDataFromAztec()
+2015/05/11 14:37:39:info: Logging initialised
+2015/05/11 14:37:39:info: PayrollExport.EXE Started
+2015/05/11 14:37:39:info: Loading Configuration File
+2015/05/11 14:37:39:info: 
+Payroll Export Configuration
+ExportFileSaveLocation: c:\PayrollExport\Export
+ExportFileBackupLocation: c:\PayrollExport\Export\Backup
+UseDecimalHourFormat: True
+ExportHourlyPaid: True
+ExportSalaryPaid: False
+ExportEndDay: Sunday
+UseExportEndDay: True
+UseSSN: False
+WorkedJobsPerRow: 4
+
+2015/05/11 14:37:59:info: PayrollExport.EXE Ended
+2015/05/11 14:38:08:info: Logging initialised
+2015/05/11 14:38:08:info: PayrollExport.EXE Started
+2015/05/11 14:38:09:info: Loading Configuration File
+2015/05/11 14:38:09:info: 
+Payroll Export Configuration
+ExportFileSaveLocation: c:\PayrollExport\Export
+ExportFileBackupLocation: c:\PayrollExport\Export\Backup
+UseDecimalHourFormat: True
+ExportHourlyPaid: True
+ExportSalaryPaid: False
+ExportEndDay: Sunday
+UseExportEndDay: True
+UseSSN: False
+WorkedJobsPerRow: 4
+
+2015/05/11 14:38:14:info: PayrollExport.EXE Ended
+2015/05/11 14:56:42:info: Logging initialised
+2015/05/11 14:56:42:info: PayrollExport.EXE Started
+2015/05/11 14:56:42:info: Loading Configuration File
+2015/05/11 14:56:42:info: 
+Payroll Export Configuration
+ExportFileSaveLocation: c:\PayrollExport\Export
+ExportFileBackupLocation: c:\PayrollExport\Export\Backup
+UseDecimalHourFormat: True
+ExportHourlyPaid: True
+ExportSalaryPaid: False
+ExportEndDay: Sunday
+UseExportEndDay: True
+UseSSN: False
+WorkedJobsPerRow: 4
+
+2015/05/11 14:56:45:info: User confirmed all payroll times are verified
+2015/05/11 14:56:45:info: Begin DoExort()
+2015/05/11 14:56:45:info: Generating payroll export for 04/05/2015 00:00:00 to 10/05/2015 00:00:00
+2015/05/11 14:56:45:info: Loading scripts
+2015/05/11 14:56:45:info: 1 scripts loaded 
+2015/05/11 14:56:45:info: Begin GetPayrollDataFromAztec()
+2015/05/11 14:56:56:info: End GetPayrollDataFromAztec()
+2015/05/11 14:56:56:info: No payroll data to export.
+2015/05/11 14:56:56:info: End DoExort()
+2015/05/11 14:57:00:info: PayrollExport.EXE Ended

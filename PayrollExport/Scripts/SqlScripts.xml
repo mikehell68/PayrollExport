@@ -1,0 +1,1202 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<SqlScripts>
+  <SqlScript Id="1" Name="PayrollExportActual">
+    <![CDATA[/***************************************************************************/
+/*                                                                         */
+/*         Prequery; #Rpt_EmpSchemaLabour                                  */
+/*                                                                         */
+/***************************************************************************/
+
+
+SET LANGUAGE ENGLISH
+DECLARE @SiteCode int
+DECLARE @Rollover DateTime
+DECLARE @RStartDate DATETIME
+DECLARE @REndDate DATETIME
+
+--test
+DECLARE @StartDate DATETIME
+DECLARE @EndDate DATETIME
+SET @StartDate = '{0}'
+SET @EndDate = '{1}'
+-------
+ 
+SET @SiteCode = dbo.fnGetSiteCode()
+SET @Rollover = (SELECT [RolloverTime] FROM Aztec.dbo.ac_estate)
+
+SET @RStartDate = @StartDate + ' ' + @Rollover
+SET @REndDate = DATEADD(DAY,1,@EndDate) + '  ' + @Rollover
+
+DECLARE @Aztecversion AS SMALLINT 
+DECLARE @sqltext varchar(2000)  
+SET @Aztecversion = ( Select CAST(ProductVersion AS VARCHAR(5)) + '' + CAST(MajorVersion AS VARCHAR(5)) + '' + CAST(MinorVersion AS VARCHAR(5)) 
+      from Aztec.dbo.ModuleVersion
+       Where ModuleID = 'DB')  
+
+
+/*Create Compdet Table*/
+IF OBJECT_ID('tempdb.dbo.#CompDet') IS NOT NULL DROP TABLE #CompDet
+
+Select TED.Sitecode, s.Name SiteName, s.Reference, EposDeviceID TerminalID, POSCode, ted.Deleted
+Into #CompDet
+from Aztec.dbo.ThemeEposDevice_Repl  TED INNER JOIN Aztec.dbo.ac_site s on s.id = ted.Sitecode
+WHERE TED.ISServer <> 1
+AND Sitecode in (@SiteCode)
+
+IF OBJECT_ID('tempdb.dbo.#Aztecpay') IS NOT NULL Drop Table #Aztecpay
+
+/*create table*/ 
+Create Table #Aztecpay (SiteCode Smallint,
+      TerminalID Smallint,
+      TransactionID Bigint,
+      Accountid Bigint,
+      Date Datetime,
+      PaymentMethod Int,
+      EmployeeID BigInt,
+      PayVal Float,
+      Tips Float,
+      Inc Float,
+      Exc Float,
+      Service Float,
+      DecTips FLOAT)
+
+If @Aztecversion >= '351' 
+SET @sqltext = 'INSERT INTO #Aztecpay '+
+    'Select cd.Sitecode, P.terminalID, P.TransactionID, Accountid, P.Date,  PaymentMethod, '+
+    'CASE WHEN ReportingEmployeeID IS NULL THEN Employeeid ELSE ReportingEmployeeID END EmployeeID, '+
+    'SUM(P.Amount-Change-[Cash Back]-forfeitAmount)/100 PayVal, SUM(Tip)/100 As Tips , SUM(Inc), SUM(Exc), SUM(Service), 0 '+
+    'from Aztec.dbo.Payments P INNER JOIN #CompDet cd on cd.terminalid = p.TerminalID '+
+    'Left Outer Join (SELECT PaymentTransactionID, SUM(CASE WHEN TR.ServiceCharge = 0 AND Exclusive = 0 THEN TaxPaid/100 ELSE 0 END) Inc, '+
+        'SUM(CASE WHEN ServiceCharge = 0 AND Exclusive = 1 THEN TaxPaid/100 ELSE 0 END) Exc, '+
+        'SUM(CASE WHEN ServiceCharge = 1 THEN TaxPaid/100 ELSE 0 END) Service '+
+        'FROM Aztec.dbo.NewTax NT '+
+        'INNER JOIN Aztec.dbo.TaxRules TR ON NT.Tax = TR.[Index No] '+
+        'Group by PaymentTransactionID) tax on tax.PaymentTransactionID = P.TransactionID '+
+    'Where Date Between '''+CONVERT(Varchar(8),@RStartDate,112) +' '+CONVERT(Varchar(8),@RStartDate,114) +''' '+
+    'AND '''+CONVERT(Varchar(8),@REndDate,112) +' '+CONVERT(Varchar(8),@REndDate,114) +''' '+
+    'AND Payout = 0 '+
+    'Group By cd.sitecode, P.terminalID, P.TransactionID, Accountid, p.Date, PaymentMethod, '+
+    'CASE WHEN ReportingEmployeeID IS NULL THEN Employeeid ELSE ReportingEmployeeID END'
+Else     
+SET @sqltext = 'INSERT INTO #Aztecpay '+
+    'Select cd.Sitecode, P.terminalID, P.TransactionID, Accountid, P.Date,  PaymentMethod, '+
+    'CASE WHEN ReportingEmployeeID IS NULL THEN Employeeid ELSE ReportingEmployeeID END EmployeeID, '+
+    'SUM(P.Amount-Change-[Cash Back])/100 PayVal, SUM(Tip)/100 As Tips , SUM(Inc), SUM(Exc), SUM(Service), 0 '+
+    'from Aztec.dbo.Payments P INNER JOIN #CompDet cd on cd.terminalid = p.TerminalID '+
+    'Left Outer Join (SELECT PaymentTransactionID, SUM(CASE WHEN TR.ServiceCharge = 0 AND Exclusive = 0 THEN TaxPaid/100 ELSE 0 END) Inc, '+
+        'SUM(CASE WHEN ServiceCharge = 0 AND Exclusive = 1 THEN TaxPaid/100 ELSE 0 END) Exc, '+
+        'SUM(CASE WHEN ServiceCharge = 1 THEN TaxPaid/100 ELSE 0 END) Service '+
+        'FROM Aztec.dbo.NewTax NT '+
+        'INNER JOIN Aztec.dbo.TaxRules TR ON NT.Tax = TR.[Index No] '+
+        'Group by PaymentTransactionID) tax on tax.PaymentTransactionID = P.TransactionID '+
+    'Where Date Between '''+CONVERT(Varchar(8),@RStartDate,112) +' '+CONVERT(Varchar(8),@RStartDate,114) +''' '+
+    'AND '''+CONVERT(Varchar(8),@REndDate,112) +' '+CONVERT(Varchar(8),@REndDate,114) +''' '+
+    'AND Payout = 0 '+
+    'Group By cd.sitecode, P.terminalID, P.TransactionID, Accountid, p.Date, PaymentMethod, '+
+    'CASE WHEN ReportingEmployeeID IS NULL THEN Employeeid ELSE ReportingEmployeeID END'
+Exec (@sqltext)
+
+INSERT INTO #AztecPay (Sitecode, TerminalID, TransactionID, Accountid, Date, PaymentMethod, EmployeeID, DecTips)
+Select SiteCode, p.TerminalID, TransactionID, AccountID, [Date], 1, EmployeeID, SUM(P.Amount)/100 TipsVal 
+from Aztec.dbo.TipsDeclared P INNER JOIN #CompDet CD ON P.TerminalID = CD.TerminalID 
+WHERE P.date Between @RStartDate AND @REndDate 
+Group By SiteCode, p.TerminalID, TransactionID, AccountID, [Date], EmployeeID
+Having SUM(P.Amount)/100  <> 0
+
+IF OBJECT_ID('tempdb.dbo.#Rpt_ScheduleTable') IS NOT NULL Drop Table #Rpt_ScheduleTable
+
+Create Table #Rpt_ScheduleTable (RowID Int Identity(0,1),
+         SiteCode int,
+         UserID BIGINT,
+         TransDate Datetime,
+         ActualSlot Int,
+         TimeSlot Int,
+         SessStart Datetime,
+         SessEnd DateTime,
+         WkEnd Datetime,
+         JobDesc Varchar(15),
+         RoleID Int,
+         RoleName Varchar(20),
+         PayType Int,
+         PayTypeName Varchar(20),
+         PaySchemeVersion Int, 
+         PaySchemeVersionOverride Int,
+         TxStart Bigint,
+         TxEnd Bigint,
+         InTime DateTime,
+         OutTime DateTime,
+         TotalHrs Decimal(10,4),
+         WeeklyCumHr Decimal(10,4),
+         DailyCumHr Decimal(10,4))
+      
+      
+IF OBJECT_ID('tempdb.dbo.#TmpScheduleTable') IS NOT NULL Drop Table #TmpScheduleTable
+
+Create Table #TmpScheduleTable (RowID Int Identity(0,1),
+        ParentRowID Int,
+        Sub_Parent Int,
+        No_Seq Int,
+        SiteCode int,
+        UserID BIGINT,
+        TransDate Datetime,
+        JobDesc Varchar(15),
+        WkEnd Datetime,
+        RoleID Int,
+        RoleName Varchar(20),
+        PayType Int,
+        PayTypeName Varchar(20),
+        PaySchemeVersion Int, 
+        PaySchemeVersionOverride Int,
+        TxStart BIGINT, 
+        TxEnd BIGINT, 
+        InTime DateTime,
+        OutTime DateTime,
+        BreakTime Float)
+
+IF OBJECT_ID('tempdb.dbo.#Schedule') IS NOT NULL Drop Table #Schedule
+
+Select * 
+INTO #Schedule
+from Aztec.dbo.Schedule
+Where BsDate Between @StartDate and @EndDate
+
+Insert INTO #TmpScheduleTable (SiteCode,UserID,TransDate,JobDesc,RoleID,PaySchemeVersion, PaySchemeVersionOverride, InTime,OutTime, BreakTime)
+Select S.Sitecode, S.UserID, bsDate AS TransDate, 'Actual', WRoleID WorkedRoleID, s.WorkedPaySchemeVersionId, S.WorkedUserPayRateOverrideVersionId, 
+AccIn, AccOut,CAST(CONVERT(DATETIME,CONVERT(VARCHAR(8),S.[break],8),1) AS FLOAT) *24
+FROM #Schedule S 
+Where Visible = 'Y'
+AND Confirmed = 'Y'
+AND (DATEDIFF(HOUR, AccIn, AccOut) Between 0 AND 24)
+AND SiteCode IN (Select Top 1 SiteCode from #Compdet)
+
+IF OBJECT_ID('tempdb.dbo.#EmployeeBreaks') IS NOT NULL DROP TABLE #EmployeeBreaks
+
+
+CREATE TABLE #EmployeeBreaks(
+	[SiteCode] [smallint] NOT NULL,
+	[BreakID] [int] NOT NULL,
+	[JobDesc] Varchar(10),
+	[EmployeeID] BIGINT NOT NULL,
+	[BreakStartDate] [datetime] NOT NULL,
+	[BreakEndDate] [datetime] NULL,
+	[Deleted] [bit] NOT NULL,
+	[LMDT] [datetime] NULL,
+	[ModifiedBy] [varchar](20) NULL, PaySchemeVersionId INT, IsBreakPaid BIT, IsBreakPaidIfExceeded BIT, MaxPaidBreakMinutes FLOAT, ShiftEndTime DATETIME, BreakTime DATETIME, PaidBreakTime DATETIME, UnPaidBreakTime DATETIME,
+ 	PRIMARY KEY ([SiteCode] ASC, JobDesc Asc, [BreakID] ASC))
+
+INSERT INTO #EmployeeBreaks ([SiteCode],[BreakID],[JobDesc],[EmployeeID],[BreakStartDate],[BreakEndDate],[Deleted],[LMDT],[ModifiedBy], BreakTime, PaidBreakTime)
+SELECT [SiteCode],[BreakID], 'Actual', [EmployeeID],[BreakStartDate],[BreakEndDate],[Deleted],[LMDT],[ModifiedBy], BreakEndDate - BreakStartDate, BreakEndDate - BreakStartDate
+FROM aztec.dbo.EmployeeBreaksAccepted
+WHERE (BreakStartDate BETWEEN @RStartDate AND @REndDate OR BreakEndDate BETWEEN @RStartDate AND @REndDate)
+AND Deleted <> 1
+
+UPDATE E
+SET E.PaySchemeVersionId = S.PaySchemeVersion, E.ShiftEndTime = S.OutTime
+FROM #EmployeeBreaks E INNER JOIN
+#TmpScheduleTable S ON E.EmployeeID = S.UserID
+AND E.BreakEndDate BETWEEN S.InTime AND S.OutTime
+AND e.JobDesc = S.JobDesc
+
+UPDATE E
+SET E.IsBreakPaid = b.IsBreakPaid, E.IsBreakPaidIfExceeded = b.IsBreakPaidIfExceeded,
+E.MaxPaidBreakMinutes = b.MaxPaidBreakMinutes
+FROM #EmployeeBreaks E INNER JOIN
+Aztec.dbo.ac_PaySchemeVersion b ON E.PaySchemeVersionId = b.Id 
+INNER JOIN Aztec.dbo.ac_PayScheme c ON b.PaySchemeId = c.Id 
+INNER JOIN Aztec.dbo.ac_PayFrequency pf on pf.Id = c.PayFrequencyId 
+
+--This break is never paid
+UPDATE #EmployeeBreaks
+SET PaidBreakTime = 0
+WHERE IsBreakPaid = 0
+
+--This break has exceeded the maximum allowed minutes but these are paid anyway
+UPDATE #EmployeeBreaks
+SET PaidBreakTime =  BreakTime - DATEADD(MINUTE,-MaxPaidBreakMinutes,BreakTime)
+WHERE IsBreakPaid = 1 AND IsBreakPaidIfExceeded = 1 AND MaxPaidBreakMinutes <> 0 AND (CAST(BreakTime AS FLOAT) * 1440)  > MaxPaidBreakMinutes
+
+
+--This break is less than the maximum allowed so pay the break
+UPDATE #EmployeeBreaks
+SET PaidBreakTime = BreakTime
+WHERE IsBreakPaid = 1 AND IsBreakPaidIfExceeded = 1 AND (CAST(BreakTime AS FLOAT) * 1440) <= MaxPaidBreakMinutes
+
+--There is no maximum break set but breaks are paid
+UPDATE #EmployeeBreaks
+SET PaidBreakTime = BreakTime
+WHERE IsBreakPaid = 1 AND IsBreakPaidIfExceeded = 1 AND MaxPaidBreakMinutes = 0 
+
+--This break has exceeded the maximum allowed minutes and we won't pay for more than the maximum
+UPDATE #EmployeeBreaks
+SET PaidBreakTime = 0
+WHERE IsBreakPaid = 1 AND IsBreakPaidIfExceeded = 0 AND (CAST(BreakTime AS FLOAT) * 1440) > MaxPaidBreakMinutes
+
+--This break has not exceeded the maximum allowed minutes and we won't pay for more than the maximum
+UPDATE #EmployeeBreaks
+SET PaidBreakTime = BreakTime
+WHERE IsBreakPaid = 1 AND IsBreakPaidIfExceeded = 0 AND (CAST(BreakTime AS FLOAT) * 1440) <= MaxPaidBreakMinutes
+
+UPDATE #EmployeeBreaks
+SET UnPaidBreakTime = BreakTime - PaidBreakTime
+
+
+UPDATE t 
+Set InTime =  DATEADD(MINUTE,UnPaidBreakTime * 1440,InTime), BreakTime = PaidBreakTime * 1440
+from #TmpScheduleTable t INNER JOIN
+(SELECT EmployeeId, ShiftEndTime, JobDesc, SUM(CAST(UnPaidBreakTime AS FLOAT)  ) As UnPaidBreakTime, SUM(CAST(PaidBreakTime AS FLOAT)  ) As PaidBreakTime  
+FROM #EmployeeBreaks
+GROUP BY EmployeeID, ShiftEndTime, JobDesc) E ON t.UserID = E.EmployeeID
+AND t.OutTime = E.ShiftEndTime
+AND t.JobDesc = E.JobDesc
+
+/*************************   END TMP TABLES *******************/
+Declare @LoopStart datetime
+Declare @LoopEnd datetime
+
+Declare @TimeSlot Int
+Declare @24hourSlot Int
+Declare @Hourly Float
+
+SELECT @LoopStart = dateadd(mi,(datediff(mi,-53690,MIN(InTime))/30*30),-53690) from #TmpScheduleTable
+SELECT @LoopEnd = MAX(OutTime) from #TmpScheduleTable
+
+Set @TimeSlot = 0
+Select  @24hourSlot = 0
+Set @Hourly = 0
+
+/*Insert Half ourly slots sor Shifts and Sales*/
+WHILE (@LoopStart <= @LoopEnd) 
+  BEGIN
+    DECLARE @SlotStart DATETIME,
+            @SlotEnd DATETIME
+
+    SET @SlotStart = @LoopStart
+    SELECT @SlotEnd = DATEADD(SECOND,1800,@LoopStart)
+
+ --Shift
+ Insert into #Rpt_ScheduleTable (SiteCode,UserID,TransDate, ActualSlot, TimeSlot, SessStart, SessEnd, JobDesc,RoleID,PaySchemeVersion, PaySchemeVersionOverride,TxStart, TxEnd, InTime,OutTime)
+ Select SiteCode, UserID,TransDate, @TimeSlot, @24hourSlot, @SlotStart, @SlotEnd, JobDesc,RoleID,PaySchemeVersion, PaySchemeVersionOverride,TxStart, TxEnd, InTime,ISNULL(OutTime,@REndDate)
+ from #TmpScheduleTable 
+    WHERE ( (((InTime < @SlotStart) AND (OutTime BETWEEN @SlotStart AND @SlotEnd))
+         OR
+         ((InTime BETWEEN @SlotStart AND @SlotEnd) AND (OutTime BETWEEN @SlotStart AND @SlotEnd)) 
+         OR
+         ((InTime BETWEEN @SlotStart AND @SlotEnd) AND (OutTime > @SlotEnd)) 
+         OR
+         ((InTime < @SlotStart) AND (OutTime > @SlotEnd))) )
+    Order by ISNULL(OutTime,@REndDate), InTime
+
+    SET @LoopStart = DATEADD(SECOND,1800,@LoopStart)
+    SET @TimeSlot = @TimeSlot + 1 
+    
+    If @24hourSlot = 48
+     SET @24hourSlot = 0
+    Else
+     SET @24hourSlot = @24hourSlot +1
+     
+END
+
+--Update Actual Hours worked
+Update #Rpt_ScheduleTable 
+Set TotalHrs = (CASE WHEN ((Intime < SessStart) AND (OutTime BETWEEN SessStart AND SessEnd)) 
+     THEN CAST(DATEDIFF(SECOND,  SessStart, OutTime) AS Float) /3600
+    WHEN ((InTime BETWEEN SessStart AND SessEnd) AND (OutTime BETWEEN SessStart AND SessEnd))
+     THEN CAST(DATEDIFF(SECOND, InTime, OutTime) AS Float) /3600
+    WHEN ((InTime BETWEEN SessStart AND SessEnd) AND (OutTime > SessEnd)) 
+     THEN CAST(DATEDIFF(SECOND, InTime, SessEnd) AS Float) /3600
+    ELSE CAST(DATEDIFF(SECOND, SessStart, SessEnd)AS Float) /3600  END)
+
+Delete from  #Rpt_ScheduleTable
+Where TotalHrs = 0
+
+/**** Set Pay Type ******/
+Update S
+Set PayType = c.PayFrequencyId,
+PayTypeName = pf.Name
+from #Rpt_ScheduleTable S 
+INNER JOIN Aztec.dbo.ac_PaySchemeVersion b ON s.PaySchemeVersion = b.Id
+INNER JOIN Aztec.dbo.ac_PayScheme c ON b.PaySchemeId = c.Id
+INNER JOIN Aztec.dbo.ac_PayFrequency pf on pf.Id = c.PayFrequencyId
+
+/*Insert Any Paytype > 2 that are not already in schedule table*/
+DECLARE @MyDate DateTime
+Set @MYDate = @StartDate
+
+IF OBJECT_ID('tempdb.dbo.#AztecempJob') IS NOT NULL begin
+ DROP TABLE #AztecempJob
+end
+
+Select Distinct ISNULL(Siteid,-1) SiteID, Weekend, e.ID as UserID, 
+ISNULL(Terminated,0) Terminated, ISNULL(Terminationdate,'19000101') Terminationdate, ISNULL(udfv1.Value,'19000101') HireDate, 
+ISNULL(ReinstatementDate,'19000101') ReinstatementDate,
+    NULL AS ARoleID, NULL AS APayType, NULL AS APayScheme, NULL AS APaySchemeOverride, NULL APaySchemeVersion,
+     NULL AS SRoleID, NULL AS SPayType, NULL AS SPayScheme, NULL AS SPaySchemeOverride, NULL SPaySchemeVersion,
+    NULL AS CRoleID, NULL AS CPayType, NULL AS cPayScheme, NULL AS CPaySchemeOverride, NULL CPaySchemeVersion
+INTO #AztecempJob
+FROM Aztec.dbo.ac_User e
+LEFT JOIN Aztec.dbo.ac_UserDefinedFieldValues udfv1 ON e.Id = udfv1.UserId and udfv1.UserDefinedFieldId = 25  /* Hire Date */   
+LEFT JOIN (Select Siteid, Userid
+   from Aztec.dbo.ac_AllUserSites us 
+   INNER JOIN #CompDet cd on cd.sitecode = us.SiteId) us on us.UserId = e.ID, ZBSData.dbo.Dim_Calendar
+Where TransDate between @StartDate AND @EndDate
+AND (ISNULL(TerminationDate,DateAdd(year,1,@EndDate))>= @EndDate OR ISNULL(Terminated,0) = 0)
+and ISNULL(ReinstatementDate,'19000101') <= DateAdd(Day,1,@EndDate + ' ' + @Rollover)
+and ISNULL(udfv1.Value,'19000101') <= DateAdd(Day,1,@EndDate + ' ' + @Rollover)
+AND e.DefaultTerminalRoleId IS NOT NULL
+
+Update S
+Set 
+ARoleID = ur.RoleId, SRoleID = ur.RoleId, CRoleID = ur.RoleId,
+APayType = c.PayFrequencyId, SPayType = c.PayFrequencyId, CPayType = c.PayFrequencyId,
+APayScheme = b.Id, SPayScheme = b.Id, CPayScheme = b.Id,
+APaySchemeVersion = c.ID, SPaySchemeVersion = c.ID, CPaySchemeVersion = c.ID
+from #AztecempJob S 
+INNER JOIN Aztec.dbo.ac_User u on u.Id = s.userID
+INNER JOIN Aztec.dbo.ac_UserRoles ur on ur.UserId = U.ID
+INNER JOIN Aztec.dbo.ac_PayScheme c ON ur.PaySchemeId = c.Id
+INNER JOIN Aztec.dbo.ac_PaySchemeVersion b ON b.Id = c.CurrentPaySchemeVersionId
+INNER JOIN Aztec.dbo.ac_PayFrequency pf on pf.Id = c.PayFrequencyId
+Where ur.RoleId = u.DefaultTerminalRoleId 
+
+-- #348181  Payrate override
+-- Actual (Worked)
+update e set APaySchemeOverride = so.WorkedUserPayRateOverrideVersionId
+--select e.userid, e.APaySchemeOverride, so.WorkedUserPayRateOverrideVersionId
+  from #AztecempJob e
+  join Aztec.dbo.schedule so 
+    on e.UserID = so.UserId and e.SiteID = so.SiteCode
+  join (select Max(Schin) Schin, si.UserId, si.SiteCode from Aztec.dbo.schedule si where si.WorkedUserPayRateOverrideVersionId is not null group by si.UserId, si.SiteCode) mx
+    on so.Schin = mx.Schin and e.SiteID = mx.SiteCode and e.UserID = mx.UserId
+
+Update EJ
+Set EJ.ARoleID = E.RoleId, EJ.APayType = E.PayType, APayScheme = PaySchemeVersion, APaySchemeOverride = PaySchemeVersionOverride
+From #AztecempJob EJ INNER JOIN (Select UserID, RoleID, PayType, PaySchemeversion, PaySchemeversionOverride, WeekEnd 
+      from #Rpt_ScheduleTable E INNER JOIN ZBSData.dbo.Dim_Calendar DC ON E.Transdate = DC.TransDate
+      Where JobDesc = 'Actual'
+      AND RoleID <> 0
+      AND PayType > 1) E ON e.UserID = EJ.UserID AND E.Weekend = EJ.Weekend
+
+
+WHILE @MyDate < DateAdd(Day,1,@EndDate) 
+BEGIN
+
+	INSERT INTO #Rpt_ScheduleTable (Sitecode, TransDate, UserID, JobDesc, RoleID, Paytype, PaySchemeversion, PaySchemeversionOverride)
+	Select SiteID, @MyDate,  UserID, 'Actual', ARoleID, APaytype, APayScheme, APaySchemeOverride
+	from #AztecempJob J INNER JOIN ZBSData.dbo.Dim_Calendar DC ON J.Weekend = DC.Weekend AND @MyDate = TransDate
+	Where ((TerminationDate >= @MyDate OR TerminationDate IS NULL) OR (Terminated = 0))
+	and ReinstatementDate <= DateAdd(Day,1,@MyDate + ' ' + @Rollover)
+	and ISNULL(HireDate,'19000101') <= DateAdd(Day,1,@MyDate + ' ' + @Rollover)
+	AND (APayType > 2 AND APayType <> 4  AND APayType <> 7)
+	AND UserID NOT IN (Select UserID from #Rpt_ScheduleTable S 
+	   WHERE JobDesc = 'Actual' 
+	   AND CASE WHEN S.RoleID = 0 THEN J.ARoleID  ELSE S.RoleID END = J.ARoleID 
+	   AND Paytype NOT IN (1,4,7) 
+	   AND TransDate = @MyDate)
+
+
+	Set @MyDate = DateAdd(Day,1,@MyDate)
+
+END
+
+/*get weekending dates*/
+UPDATE E
+Set WkEnd = weekEnd
+From #Rpt_ScheduleTable E INNEr Join [ZBSData].[dbo].Dim_calendar D ON E.TransDate = D.TransDate
+
+Update S
+Set RoleName = r.Name
+from #Rpt_ScheduleTable S 
+INNER JOIN Aztec.dbo.ac_Role r on r.Id = S.roleID
+
+Update S
+Set PayTypeName = pf.Name
+from #Rpt_ScheduleTable S INNER JOIN
+Aztec.dbo.ac_PayFrequency pf on s.PayType =pf.Id
+
+Update S
+Set PayType = 1,
+PaySchemeVersion = -2222
+from #Rpt_ScheduleTable S
+Where PaySchemeVersion IS NULL
+
+--Calaculte cummative for week
+UPDATE A  
+SET WeeklyCumHr = (SELECT SUM(ISNULL(B.TotalHrs,0))  
+  FROM #Rpt_ScheduleTable B  
+  WHERE B.OutTime <= A.OutTime 
+  AND B.RowID <= A.RowID
+  AND A.SiteCode = B.SiteCode 
+  AND A.WkEnd = B.Wkend
+  AND A.UserID = B.UserID
+  AND A.JobDesc = B.JobDesc
+  AND A.PayType = B.PayType
+--  AND A.RoleID = B.RoleID
+)
+FROM #Rpt_ScheduleTable A
+
+--Calaculte cummative for Day  
+UPDATE A  
+SET DailyCumHr = (SELECT SUM(ISNULL(B.TotalHrs,0))  
+  FROM #Rpt_ScheduleTable B  
+  WHERE B.OutTime <= A.OutTime 
+  AND B.RowID <= A.RowID
+  AND A.SiteCode = B.SiteCode 
+  --AND dbo.fn_GetTransDate(A.SessStart,@Rollover) = dbo.fn_getTransDate(B.SessStart,@Rollover)
+  AND a.TransDate = B.TransDate
+  AND A.UserID = B.UserID
+  AND A.JobDesc = B.JobDesc
+  AND A.PayType = B.PayType
+--  AND A.RoleID = B.RoleID
+)
+FROM #Rpt_ScheduleTable A
+
+
+IF OBJECT_ID('tempdb.dbo.#TmpPayRates') IS NOT NULL drop table #TmpPayRates
+
+Create Table #TmpPayRates ( RowOrderID Int Identity(0,1),
+       OrderID Smallint,
+       PayVersionID Int,
+       BandID Int,
+       BandName Varchar(20),
+       MinDailyHours FLOAT,
+       MaxDailyHours FLOAT,
+       MinWeeklyHours FLOAT,
+       MaxWeeklyHours FLOAT,
+       PayRate Money)
+
+Insert into #TmpPayRates (PayVersionID, BandID, BandName, MinDailyHours, MInWeeklyHours, PayRate)
+Select PaySchemeVersionId, pb.PaySchemeBandTypeId, pbt.Name, DailyHoursThreshold, WeeklyHoursThreshold, PayRate
+from Aztec.dbo.ac_PaySchemeBand pb 
+INNER JOIN Aztec.dbo.ac_PaySchemeBandType pbt on pbt.Id = pb.PaySchemeBandTypeId
+Order By PaySchemeVersionId, PayRate, pb.PaySchemeBandTypeId
+
+UpDate b
+Set OrderID = (Select count(*) 
+    from  #TmpPayRates  A
+    Where A.RowOrderID <= B.RowOrderID
+    AND A.PayVersionID = B.PayVersionID)
+from  #TmpPayRates  B
+
+Update A
+Set A.MaxDailyHours = B.MinDailyHours
+from #TmpPayRates A INNER JOIN #TmpPayRates B On A.PayVersionID = B.PayVersionID 
+AND A.MinDailyHours < B.MinDailyHours
+
+Update A
+Set A.MaxWeeklyHours = B.MinWeeklyHours  
+from #TmpPayRates A INNER JOIN #TmpPayRates B On A.PayVersionID = B.PayVersionID 
+AND A.MinWeeklyHours < B.MinWeeklyHours
+
+Declare @MaxWeeklyHrs Int
+Set @MaxWeeklyHrs = Round((Select MAX(WeeklyCumHr) from #Rpt_ScheduleTable),0)
+
+Update A
+Set A.MaxWeeklyHours = (CASE WHEN @MaxWeeklyHrs > 168 then @MaxWeeklyHrs ELSE 168 END)
+from #TmpPayRates A INNER JOIN (Select PayVersionId, MAX(OrderID) OrderID
+from #TmpPayRates
+Group by PayVersionId) B On A.PayVersionID = B.PayVersionID 
+AND a.OrderID = B.OrderID
+
+Declare @MaxDailyHrs Int
+Set @MaxDailyHrs = Round((Select MAX(DailyCumHr) from #Rpt_ScheduleTable),0)
+
+/*Set Daily Max*/
+Update #TmpPayRates
+Set MaxDailyHours = CASE WHEN OrderID <> 1 AND MinDailyHours = 0 THEN NULL ELSE CASE WHEN @MaxDailyHrs > 24 THEN @MaxDailyHrs ELSE 24 END END
+Where ISNULL(MaxDailyHours,0) = 0
+
+/*Update A
+Set A.MinDailyHours = 0
+from #TmpPayRates A INNER JOIN (Select PayVersionId, Min(OrderID) OrderID
+        from #TmpPayRates
+        Group by PayVersionId) B On A.PayVersionID = B.PayVersionID 
+               AND a.OrderID = B.OrderID*/
+
+Update #TmpPayRates 
+Set MinWeeklyHours = MaxWeeklyHours
+Where OrderID = 1
+AND MinWeeklyHours = 0
+
+INSERT INTO #TmpPayRates
+Values (1,-2222,1,'Standard',0,24,168,168,0.00)
+
+--Insert Scheme where start Pay hours > 0
+INSERT INTO #TmpPayRates
+Select 0, PayversionID, 0, 'Basic', 0, MIN(MinDailyHours),Null,Null, 0 
+from #TmpPayRates
+group by PayVersionID
+Having MIN(MinDailyHours) > 0
+
+-- ========================================================================================
+-- (1)   Hourly Wages Costs
+-- ========================================================================================
+
+IF OBJECT_ID('tempdb.dbo.#EmpPayRates') IS NOT NULL drop table #EmpPayRates
+
+Create Table #EmpPayRates ( SiteID Int,
+       ShiftRowID Int Identity(0,1),
+       RowID Int,
+       JobDesc Varchar(50),
+       StartID Int,
+       UserID BIGINT,
+       RoleID Int,
+       TransDate Datetime, 
+       ActualSlot Int,
+       TimeSlot Int,
+       WkEnd Datetime,
+       bandOrderID Int,
+       Band Int,
+       BandName varchar(25), 
+       PayType Int, 
+       PayScheme Int,
+       PaySchemeOverride Int,
+       TotalHrs Decimal(10,4),
+       PayRate Money,
+       DailyCumHr Decimal(10,4),
+       WeeklyCumHr Decimal(10,4),
+       TotalPaidHrs Decimal(10,4),
+       TotalWkHrs Decimal(10,4),
+       TotalPay Money,
+       DailyMin FLOAT,
+       DailyMax FLOAT,
+       WeeklyMin FLOAT,
+       WeeklyMax FLOAT)
+
+Insert Into #EmpPayRates (Siteid, RowID, JobDesc, UserID, RoleID, TransDate, ActualSlot, TimeSlot, WkEnd, BandOrderID, Band, BandName, PayType, 
+PayScheme, PaySchemeOverride, TotalHrs, DailyCumHr, 
+WeeklyCumHr, DailyMin, DailyMax, WeeklyMin, WeeklyMax, TotalPaidHrs, PayRate)
+Select SiteCode, RowID, JobDesc, s.UserID, RoleID, TransDate,ActualSlot, TimeSlot,Wkend, OrderID, t.BandID, t.BandName, PayType, 
+PaySchemeVersion, PaySchemeVersionOverride, TotalHrs, DailyCumHr, WeeklyCumHr, 
+t.MinDailyHours,  t.MaxDailyHours, t.MinWeeklyHours, t.MaxWeeklyHours, NULL, t.PayRate
+from #Rpt_ScheduleTable s 
+INNER JOIN #TmpPayRates T On s.PaySchemeVersion = t.PayVersionID 
+Where PayType = 1 
+Order by SiteCode, JobDesc, UserID, TransDate, ActualSlot, PaySchemeVersion, PaySchemeVersionOverride, Wkend, RowID, OrderID
+
+Update e
+Set e.PayRate = b.PayRate
+from #EmpPayRates e 
+INNER JOIN Aztec.dbo.ac_UserPayRateOverrideBand b 
+     On b.SiteID = e.SiteID
+     AND b.UserPayRateOverrideVersionID = e.PaySchemeOverride 
+     AND b.PaySchemeBandTypeId  = e.Band
+
+--Daily Hours
+Update #EmpPayRates
+Set TotalPaidHrs = 
+--Full halfhour
+CASE WHEN DailyCumHr > DailyMin AND DailyCumHr <= DailyMax  
+		AND DailyCumHr-TotalHrs Between DailyMin AND DailyMax THEN TotalHrs  ELSE
+-- On the Half Hour
+CASE WHEN DailyCumHr > DailyMin AND DailyCumHr <= DailyMax 
+		AND DailyCumHr-TotalHrs < DailyMin AND DailyCumHr - DailyMin = 0 THEN  TotalHrs  ELSE 
+--Part halfhour
+CASE WHEN DailyCumHr > DailyMin AND DailyCumHr <= DailyMax 
+		AND DailyCumHr-TotalHrs < DailyMin THEN  DailyCumHr - DailyMin ELSE
+--Part halfhour
+CASE WHEN DailyCumHr-TotalHrs Between DailyMin AND DailyMax THEN  TotalHrs - (DailyCumHr - DailyMax) 
+END END END END
+
+--Weekly Hours
+Update #EmpPayRates
+Set TotalWkHrs = 
+--Full halfhour
+CASE WHEN WeeklyCumHr > WeeklyMin AND WeeklyCumHr <= WeeklyMax AND WeeklyCumHr-TotalHrs Between WeeklyMin AND  WeeklyMax THEN TotalHrs  ELSE
+-- On the Half Hour
+CASE WHEN WeeklyCumHr > WeeklyMin AND WeeklyCumHr <= WeeklyMax AND WeeklyCumHr-TotalHrs < WeeklyMin AND WeeklyCumHr - WeeklyMin = 0 THEN TotalHrs ELSE 
+--Part halfhour
+CASE WHEN WeeklyCumHr > WeeklyMin AND WeeklyCumHr <= WeeklyMax AND WeeklyCumHr-TotalHrs < WeeklyMin THEN WeeklyCumHr - WeeklyMin END END END
+
+
+IF OBJECT_ID('tempdb.dbo.#TempPayRows') IS NOT NULL drop table #TempPayRows
+
+select x.Rowid, SUM(x.TotalPaidHrs) Dayrow, SUM(x.TotalwkHrs) weekRow, 
+CASE WHEN DayHrs.TotalPaidHrs + DayHrs.TotalWkHrs > 0.5 THEN DayHrs.TotalPaidHrs - DayHrs.TotalWkHrs ELSE 0 END RowPaidHrs, 
+DayHrs.TotalWkHrs rowWkHrs
+INTO #TempPayRows
+from (	select Rowid, MAX(shiftRowid) TotalPaidHrs, 0 TotalwkHrs
+		from #EmpPayRates 
+		where (TotalPaidHrs is not null)
+		group by RowID
+		UNION ALL
+		select Rowid, 0, MAX(shiftRowid) TotalwkHrs
+		from #EmpPayRates 
+		where (TotalWkHrs is not null)
+		group by RowID
+	) x 
+INNER JOIN (select RowID, SUM(TotalPaidHrs) TotalPaidHrs, SUM(TotalWkHrs) TotalWkHrs from #EmpPayRates group by RowID) DayHrs On DayHrs.RowID = x.RowID
+group by x.Rowid, DayHrs.TotalPaidHrs, DayHrs.TotalWkHrs
+order by x.RowID
+
+Update e
+set TotalwkHrs = null
+from #EmpPayRates e
+INNER JOIN #TempPayRows r on e.RowID = r.RowID and e.ShiftRowID = r.weekRow
+where Dayrow >= weekRow
+
+Update e
+set TotalPaidHrs = rowPaidHrs
+from #EmpPayRates e
+INNER JOIN #TempPayRows r on e.RowID = r.RowID and e.ShiftRowID = r.Dayrow
+where Dayrow < weekRow
+
+Update e
+set TotalPaidHrs = Null
+from #EmpPayRates e
+INNER JOIN #TempPayRows r on e.RowID = r.RowID and e.ShiftRowID = r.Dayrow
+where Dayrow = weekRow
+AND TotalPaidHrs = TotalWkHrs
+
+
+Update #EmpPayRates 
+Set TotalPay = TotalPaidHrs * PayRate
+
+Update #EmpPayRates 
+Set TotalPay = TotalwkHrs * PayRate
+where TotalWkHrs is not null
+
+/***************************************  #Rpt_EmpSchedule ********************************************/
+IF OBJECT_ID('tempdb.dbo.#Rpt_EmpSchedule') IS NOT NULL drop table #Rpt_EmpSchedule
+
+Create Table #Rpt_EmpSchedule ( RowID Int Identity(0,1),
+        SiteCode int,
+        UserID BIGINT,
+        TransDate Datetime,
+        TimeSlot Int,
+        HalfHour   DateTime,
+        HalfHourEnd  DateTime,
+        WkEnd Datetime,
+        JobDesc Varchar(15),
+        RoleID Int,
+        RoleName Varchar(20),
+        PayType Int,
+        PayTypeName Varchar(20),
+        PayRate Money,
+        PayScheme Int, 
+        PaySchemeOverride Int,
+        TxStart BIGINT,
+        TxEnd BIGINT,
+        InTime DateTime,
+        OutTime DateTime,
+        BandID Int,
+        BandName Varchar(20),
+        TotalHrs Decimal(10,4),
+        TotalPay Money,
+        GrossSales Decimal(10,2) DEFAULT 0.00, 
+        IncTax Decimal(10,2) DEFAULT 0.00, 
+        ExcTax Decimal(10,2) DEFAULT 0.00, 
+        Service Decimal(10,2) DEFAULT 0.00, 
+        Tips Decimal(10,2) DEFAULT 0.00,
+        DecTips Decimal(10,2) DEFAULT 0.00)
+
+Insert Into #Rpt_EmpSchedule (St.SiteCode, st.UserID, st.TransDate, timeSlot, HalfHour, HalfHourEnd, WkEnd, JobDesc, pr.RoleID, RoleName,
+pr.PayType, PayTypeName, PayRate, pr.PayScheme,  PaySchemeOverride, TxStart, TxEnd, InTime, OutTime, BandID, BandName, TotalHrs, TotalPay)
+Select St.SiteCode, st.UserID, st.TransDate, St.TimeSlot, st.SessStart, st.SessEnd ,pr.WkEnd, pr.JobDesc, pr.RoleID, RoleName,
+pr.PayType, PayTypeName, PayRate, pr.PayScheme,  PaySchemeVersionOverride, TxStart, TxEnd, st.InTime, st.OutTime, Band, BandName, ISNULL(TotalPaidHrs,0)+ISNULL(TotalWkHrs,0), TotalPay
+from #EmpPayRates pr INNER JOIN #Rpt_ScheduleTable ST On pr.RowID = ST.RowID AND pr.JobDesc = ST.JobDesc
+
+--========================================================================================
+-- (2)  All Salaried Employees
+-- ========================================================================================
+Insert Into #Rpt_EmpSchedule (St.SiteCode, st.UserID, st.TransDate, TimeSlot, HalfHour, HalfHourEnd, WkEnd, JobDesc, pr.RoleID, RoleName,
+pr.PayType, PayTypeName, PayRate, pr.PayScheme,  PaySchemeOverride, TxStart, TxEnd, InTime, OutTime, BandID, BandName, TotalHrs, TotalPay)
+Select s.siteCode, s.UserID, TransDate, TimeSlot, s.SessStart, s.SessEnd, WkEnd, JobDesc, RoleID, RoleName, PayType, 
+PayTypeName, t.PayRate, PaySchemeVersion, PaySchemeVersionOverride, TxStart, TxEnd, InTime, OutTime,
+t.BandID, t.BandName, TotalHrs, t.PayRate
+from #Rpt_ScheduleTable s 
+INNER JOIN #TmpPayRates T On s.PaySchemeVersion = t.PayVersionID 
+Where PayType <> 1
+AND ISNULL(t.MinDailyHours,0) = 0
+
+Update e
+Set e.PayRate = b.PayRate,
+TotalPay = b.PayRate
+from #Rpt_EmpSchedule e 
+INNER JOIN Aztec.dbo.ac_UserPayRateOverrideBand b 
+     On b.SiteID = e.SiteCode
+     AND b.UserPayRateOverrideVersionID = e.PaySchemeOverride 
+     AND b.PaySchemeBandTypeId  = e.BandID
+
+
+/*Update e
+Set e.PayRate = x.PayRate,
+TotalPay = x.PayRate
+from #Rpt_EmpSchedule e INNER JOIN (Select up.siteid, up.CurrentUserPayRateOverrideVersionId PayVersionID, UserId,  b.PaySchemeBandTypeId BandID, b.PayRate
+     FROM Aztec.dbo.ac_UserPayRateOverride up 
+     INNER JOIN Aztec.dbo.ac_UserPayRateOverrideBand b ON b.UserPayRateOverrideVersionId = up.CurrentUserPayRateOverrideVersionId) x
+     On x.SiteID = e.SiteCode
+     AND x.PayVersionID = e.PaySchemeOverride 
+     AND x.BandID = e.BandID
+     AND x.UserId = e.UserID*/
+Where PayType <> 1
+
+UpDate E
+Set TotalPay = TotalPay/d1.Shifts
+FROM #Rpt_EmpSchedule E INNER JOIN (SELECT SiteCode, JobDesc, UserID,TransDate, COUNT(*) AS Shifts
+    FROM #Rpt_EmpSchedule
+    WHERE  PayType = 2
+    GROUP BY SiteCode, JobDesc, UserID, TransDate) D1 ON E.SiteCode = D1.Sitecode 
+         AND E.UserID = D1.UserID
+         AND E.TransDate = D1.TransDate
+         AND E.JobDesc = D1.JobDesc
+Where Paytype = 2
+
+/*Weelky Apportioned*/
+UpDate E
+Set TotalPay = (TotalPay/7)/d1.Shifts
+FROM #Rpt_EmpSchedule E 
+INNER JOIN (SELECT SiteCode, JobDesc, RoleID, UserID, TransDate, Wkend, COUNT(*) AS Shifts
+   FROM #Rpt_EmpSchedule
+   WHERE PayType = 3
+   GROUP BY SiteCode, JobDesc, RoleID, UserID, TransDate, WkEnd) D1 
+    ON E.SiteCode = D1.Sitecode 
+    AND E.UserID = D1.UserID
+    AND E.TransDate = D1.TransDate
+    AND E.JobDesc = D1.JobDesc
+    AND E.RoleID = D1.RoleID
+    AND e.WkEnd = D1.WkEnd
+Where Paytype = 3
+
+/*Non Apportioned*/
+UpDate E
+Set TotalPay = (TotalPay/Days)/d1.Shifts
+FROM #Rpt_EmpSchedule E 
+INNER JOIN (SELECT SiteCode, JobDesc, UserID, COUNT(Distinct S.TransDate) AS Days, WkEnd
+     FROM #Rpt_EmpSchedule S 
+     WHERE  PayType = 4 
+     GROUP BY SiteCode, JobDesc, UserID, Wkend) D 
+          ON E.SiteCode = D.Sitecode 
+          AND E.UserID = D.UserID
+          AND E.JobDesc = D.JobDesc
+          AND E.Wkend = D.WkEnd
+INNER JOIN (SELECT SiteCode, JobDesc, UserID, TransDate, COUNT(*) AS Shifts
+  FROM #Rpt_EmpSchedule
+  Where PayType = 4 
+  GROUP BY SiteCode, JobDesc, UserID, TransDate) D1 ON E.SiteCode = D1.Sitecode 
+        AND E.UserID = D1.UserID
+        AND E.TransDate = D1.TransDate
+        AND E.JobDesc = D1.JobDesc
+Where Paytype = 4
+
+/*Monthly Salary*/
+UpDate E
+Set TotalPay = (TotalPay/30.3333)/d1.Shifts
+FROM #Rpt_EmpSchedule E INNER JOIN (SELECT SiteCode, JobDesc, UserID,TransDate,COUNT(*) AS Shifts
+    FROM #Rpt_EmpSchedule
+    WHERE  PayType = 5
+    GROUP BY SiteCode, JobDesc, UserID, TransDate) D1 ON E.SiteCode = D1.Sitecode 
+         AND E.UserID = D1.UserID
+         AND E.TransDate = D1.TransDate
+         AND E.JobDesc = D1.JobDesc
+Where Paytype = 5
+
+/*4 Weekly*/
+UpDate E
+Set TotalPay = (TotalPay/28)/d1.Shifts
+FROM #Rpt_EmpSchedule E INNER JOIN (SELECT SiteCode, JobDesc, UserID,TransDate, COUNT(*) AS Shifts
+    FROM #Rpt_EmpSchedule
+    Where PayType = 6
+    GROUP BY SiteCode, JobDesc, UserID, TransDate) D1 ON E.SiteCode = D1.Sitecode 
+         AND E.UserID = D1.UserID
+         AND E.TransDate = D1.TransDate
+         AND E.JobDesc = D1.JobDesc
+Where Paytype =6
+
+/*Bi Weelky Apportioned*/
+UpDate E
+Set TotalPay = (TotalPay/14)/d1.Shifts
+FROM #Rpt_EmpSchedule E 
+INNER JOIN (SELECT SiteCode, JobDesc, RoleID, UserID, TransDate, Wkend, COUNT(*) AS Shifts
+   FROM #Rpt_EmpSchedule
+   WHERE PayType = 8
+   GROUP BY SiteCode, JobDesc, RoleID, UserID, TransDate, WkEnd) D1 
+    ON E.SiteCode = D1.Sitecode 
+    AND E.UserID = D1.UserID
+    AND E.TransDate = D1.TransDate
+    AND E.JobDesc = D1.JobDesc
+    AND E.RoleID = D1.RoleID
+    AND e.WkEnd = D1.WkEnd
+Where Paytype = 8
+
+/*bi Non Apportioned*/
+UpDate E
+Set TotalPay = ((TotalPay/2)/Days)/d1.Shifts
+FROM #Rpt_EmpSchedule E 
+INNER JOIN (SELECT SiteCode, JobDesc, UserID, COUNT(Distinct S.TransDate) AS Days, WkEnd
+     FROM #Rpt_EmpSchedule S 
+     WHERE  PayType = 7 
+     GROUP BY SiteCode, JobDesc, UserID, Wkend) D 
+          ON E.SiteCode = D.Sitecode 
+          AND E.UserID = D.UserID
+          AND E.JobDesc = D.JobDesc
+          AND E.Wkend = D.WkEnd
+INNER JOIN (SELECT SiteCode, JobDesc, UserID, TransDate, COUNT(*) AS Shifts
+  FROM #Rpt_EmpSchedule
+  Where PayType = 7
+  GROUP BY SiteCode, JobDesc, UserID, TransDate) D1 ON E.SiteCode = D1.Sitecode 
+        AND E.UserID = D1.UserID
+        AND E.TransDate = D1.TransDate
+        AND E.JobDesc = D1.JobDesc
+Where Paytype = 7
+
+/*Annual Salary*/
+UpDate E
+Set TotalPay = (TotalPay/364)/d1.Shifts
+FROM #Rpt_EmpSchedule E INNER JOIN (SELECT SiteCode, JobDesc, UserID,TransDate,COUNT(*) AS Shifts
+    FROM #Rpt_EmpSchedule
+    WHERE  PayType = 9
+    GROUP BY SiteCode, JobDesc, UserID, TransDate) D1 ON E.SiteCode = D1.Sitecode 
+         AND E.UserID = D1.UserID
+         AND E.TransDate = D1.TransDate
+         AND E.JobDesc = D1.JobDesc
+Where Paytype = 9
+
+/******************************    Employee Scheduling   *********************************/
+DECLARE @UKUS VARCHAR(2)
+SET @UKUS = (SELECT ISNULL(VarString,'UK') FROM Aztec.dbo.GenerVar WHERE VarName = 'UKUSMode')
+
+IF OBJECT_ID('tempdb.dbo.#Rpt_EmpSchemaLabour') IS NOT NULL Drop Table #Rpt_EmpSchemaLabour
+
+Create Table #Rpt_EmpSchemaLabour (Sitecode Int,
+       SiteName Varchar(25),
+       SiteRef varchar(10),
+       UserID Bigint,
+       FullName Varchar(41),
+       Lastname Varchar(20),
+       Firstname Varchar(20),
+       EmployeeRefCode Varchar(1024),
+       TransDate DateTime,
+       PayschemeVersionID Int,
+       JobDesc Varchar(25),
+       GroupID int,
+       RoleGroupID Int, 
+       RoleID Int,
+       Rolename Varchar(25),
+       TransID Int,
+       TransDesc Varchar(35),
+       Value Decimal(10,4))
+       
+INSERT Into #Rpt_EmpSchemaLabour  (Sitecode, userID, TransDate, PayschemeVersionID, JobDesc, RoleID, RoleName, TransID, TransDesc, Value)
+Select Sitecode, UserID, TransDate, ISNULL(PaySchemeOverride,PayScheme), JobDesc, RoleID, RoleName, BandID*100+1 TransID, Bandname+'~Hours' TransDesc, SUM(TotalHrs) As Value
+from #Rpt_EmpSchedule 
+group by Sitecode, UserID, TransDate, ISNULL(PaySchemeOverride,PayScheme), JobDesc, RoleID, RoleName, BandID, Bandname
+Having SUM(ISNULL(TotalHrs,0)+ISNULL(TotalPay,0)) <> 0
+
+INSERT Into #Rpt_EmpSchemaLabour (Sitecode, userID, TransDate, PayschemeVersionID, JobDesc, RoleID, RoleName, TransID, TransDesc, Value)
+Select Sitecode, UserID, MIN(TransDate), ISNULL(PaySchemeOverride,PayScheme), JobDesc, RoleID, RoleName, BandID*100+2 TransID, Bandname+'~Rate' TransDesc, PayRate
+from #Rpt_EmpSchedule
+group by Sitecode, UserID, ISNULL(PaySchemeOverride,PayScheme), JobDesc, RoleID, RoleName, BandID, Bandname, PayRate
+Having SUM(ISNULL(TotalHrs,0)+ISNULL(TotalPay,0)) <> 0
+
+INSERT Into #Rpt_EmpSchemaLabour (Sitecode, userID, TransDate, PayschemeVersionID, JobDesc, RoleID, RoleName, TransID, TransDesc, Value)
+Select Sitecode, UserID, TransDate, ISNULL(PaySchemeOverride,PayScheme), JobDesc, RoleID, RoleName, BandID*100+3 TransID, Bandname+'~Cost' TransDesc, SUM(TotalPay)
+from #Rpt_EmpSchedule
+group by Sitecode, UserID, TransDate, ISNULL(PaySchemeOverride,PayScheme), JobDesc, RoleID, RoleName, BandID, Bandname
+Having SUM(ISNULL(TotalHrs,0)+ISNULL(TotalPay,0)) <> 0
+
+IF OBJECT_ID('tempdb.dbo.#TmpRole') IS NOT NULL Drop Table #TmpRole
+
+Select JobDesc, UserID, MIN(RoleID) RoleID ,  CAST(Null AS Int) PaySchemeVersionID, CAST(NULL  AS Varchar(35)) Rolename 
+INTO #TmpRole
+from #Rpt_EmpSchemaLabour  
+group by JobDesc, UserID
+
+Update tr
+Set tr.RoleName = l.Rolename,
+tr.PaySchemeVersionID =  l.PayschemeVersionID
+from #TmpRole tr 
+INNER JOIN #Rpt_EmpSchemaLabour l on Tr.UserID = l.UserID
+       AND Tr.JobDesc = l.JobDesc
+       AND Tr.RoleID = l.RoleID
+       
+      
+IF OBJECT_ID('tempdb.dbo.#TempRpt_EmpSchedule') IS NOT NULL Drop Table #TempRpt_EmpSchedule
+
+Create Table #TempRpt_EmpSchedule (SiteCode int
+								, UserID BIGINT
+							    , TransDate Datetime
+							    , WkEnd Datetime
+							    , JobDesc Varchar(15)
+							    , RoleID Int
+							    , RoleName Varchar(20)
+							    , PayType Int
+							    , PayTypeName Varchar(20)
+						        , PayScheme Int
+								, PaySchemeOverride Int
+						        , PayVal Decimal(10,2) DEFAULT 0.00
+						        , Inc Decimal(10,2) DEFAULT 0.00
+						        , Exc Decimal(10,2) DEFAULT 0.00 
+						        , SCharge Decimal(10,2) DEFAULT 0.00
+						        , Tips Decimal(10,2) DEFAULT 0.00
+						        , DecTips Decimal(10,2) DEFAULT 0.00)
+
+
+INSERT INTO #TempRpt_EmpSchedule
+Select  es.SiteCode, UserID, ZBSData.dbo.fn_gettransDate(Date,@Rollover), WkEnd, JobDesc, RoleID, RoleName, PayType, PayTypeName,
+        PayScheme,  PaySchemeOverride, 
+        SUM(p.PayVal) PayVal, SUM(Inc) Inc, SUM(Exc) Exc, SUM(p.[Service]) SCharge, SUM(p.Tips) Tips, SUM(p.DecTips) DecTips
+from (Select Distinct SiteCode, UserID, TransDate,  WkEnd, JobDesc, RoleID, RoleName, PayType, PayTypeName,
+        PayScheme,  PaySchemeOverride, TxStart, TxEnd, InTime, OutTime
+        From #Rpt_EmpSchedule) es INNER JOIN #Aztecpay p on es.SiteCode = p.SiteCode and es.UserID = p.EmployeeID 
+					AND p.date between intime and Dateadd(ss,59,OutTime)
+group by es.SiteCode, UserID, ZBSData.dbo.fn_getTransDate(Date,@Rollover), WkEnd, JobDesc, RoleID, RoleName, PayType, PayTypeName,
+        PayScheme,  PaySchemeOverride
+       
+/*Inset Missing data*/
+Insert into #TempRpt_EmpSchedule (Sitecode, TransDate, WkEnd, UserID, JobDesc, RoleID, RoleName, PayScheme,
+				PayVal, Inc, Exc, SCharge, Tips, DecTips)
+Select  cd.Sitecode, ZBSData.dbo.fn_gettransDate(Date,@Rollover), WeekEnd, Employeeid, 'Actual', EJ.RoleID, ej.Rolename, ej.PaySchemeVersionID,
+				SUM(PayVal), SUM(Inc), SUM(Exc), SUM(Service), SUM(Tips), SUM(decTips)
+FROM  #AztecPay P INNER JOIN #CompDet CD ON Cd.Terminalid = P.TerminalID
+		INNER JOIN (Select te.UserID, te.RoleID, Te.Rolename, te.PaySchemeVersionID
+					from #TmpRole te INNER JOIN 		
+					(Select UserID, Min(RoleID) RoleID from #TmpRole Where JobDesc = 'Actual' group by UserID)
+					t on te.UserID = t.UserID and te.RoleID = t.RoleID
+					Where te.JobDesc = 'Actual') Ej On  Ej.UserID = p.Employeeid
+		INNER JOIN ZBSData.dbo.Dim_Calendar d on d.TransDate = ZBSData.dbo.fn_gettransDate(Date,@Rollover)
+Where EmployeeID Not in (Select UserID from #TempRpt_EmpSchedule WHERE JobDesc = 'Actual' and TransDate = ZBSData.dbo.fn_gettransDate(p.Date,@Rollover))
+group by cd.Sitecode,  Employeeid, ZBSData.dbo.fn_gettransDate(Date,@Rollover), WeekEnd, EJ.RoleID, Ej.Rolename, ej.PaySchemeVersionID
+	
+UPDATE es
+Set es.PayVal = es.PayVal + x.PayVal,
+es.Tips = es.Tips + x.Tips,
+es.Inc = es.inc + x.Inc,
+es.Exc = es.exc + x.Exc,
+es.SCharge = es.SCharge + x.sCharge,
+es.DecTips = es.DecTips + x.dectips
+from #TempRpt_EmpSchedule es INNER JOIN
+(Select e.SiteCode, e.TransDate, e.UserID, jobdesc, e.RoleID, a.PayVal - e.PayVal PayVal, a.Tips-e.Tips Tips, 
+ a.Inc-e.Inc Inc, a.Exc-e.Exc Exc, a.Scharge-e.SCharge  sCharge, a.DecTips-e.DecTips dectips
+from 
+	(Select SiteCode, ZBSData.dbo.fn_gettransDate(Date,@Rollover) TransDate, EmployeeID, 
+	ROUND(SUM(Payval),2) PayVal, ROUND(SUM(Tips),2) Tips, ROUND(SUM(Inc),2) Inc, ROUND(SUM(Exc),2) Exc, ROUND(SUM(Service),2) SCharge, ROUND(SUM(DecTips),2) DecTips
+	from #Aztecpay 
+	group by SiteCode, ZBSData.dbo.fn_gettransDate(Date,@Rollover), EmployeeID) A
+Right JOIN 
+	(Select SiteCode, TransDate, UserID, Jobdesc, MIN(RoleID) RoleID, 
+	ROUND(SUM(Payval),2) PayVal, ROUND(SUM(Tips),2) Tips, ROUND(SUM(Inc),2) Inc, ROUND(SUM(Exc),2) Exc, ROUND(SUM(SCharge),2) Scharge, ROUND(SUM(DecTips),2) DecTips
+	from #TempRpt_EmpSchedule group by SiteCode, TransDate, UserID, Jobdesc) E ON a.SiteCode = e.SiteCode and a.EmployeeID = e.UserID and a.TransDate = e.TransDate
+WHERE ((A.PayVal <> e.PayVal) 
+		OR (A.Tips <> e.Tips) 
+		OR (A.Inc <> E.Inc) 
+		OR (A.Exc <> E.Exc) 
+		OR (a.SCharge <> e.Scharge)
+		OR (a.DecTips <> e.DecTips))) x ON es.SiteCode = x.SiteCode and es.TransDate = x.TransDate and es.UserID = x.UserID and es.JobDesc = x.JobDesc and es.RoleID = x.RoleID
+		
+
+Insert into #TempRpt_EmpSchedule (Sitecode, TransDate, WkEnd, UserID, JobDesc, PayVal, Inc, Exc, SCharge, Tips, DecTips)
+Select Sitecode, x.TransDate, WeekEnd, EmployeeID, JobDesc, PayVal, Inc, Exc, SCharge, Tips, DecTips
+from ZBSData.dbo.Dim_Calendar d
+INNER JOIN (select SiteCode, EmployeeID, ZBSData.dbo.fn_gettransDate(Date, @Rollover) Transdate, 'Actual' JobDesc, 
+			ROUND(CAST(SUM(PayVal) AS FLOAT),2) PayVal, ROUND(CAST(SUM(Inc) AS FLOAT),2) Inc, ROUND(CAST(SUM(Exc) AS FLOAT),2) Exc,
+			 ROUND(CAST(SUM(Service) AS FLOAT),2) SCharge, ROUND(CAST(SUM(Tips) AS FLOAT),2) Tips, ROUND(CAST(SUM(DecTips) AS FLOAT),2) DecTips
+			from #AztecPay ap
+			group by SiteCode, EmployeeID, ZBSData.dbo.fn_gettransDate(Date, @Rollover)
+			EXCEPT
+			Select  SiteCode, UserID, TransDate, JobDesc,
+			ROUND(CAST(SUM(PayVal) AS FLOAT),2) PayVal, ROUND(CAST(SUM(Inc) AS FLOAT),2) Inc, ROUND(CAST(SUM(Exc) AS FLOAT),2) Exc,
+			ROUND(CAST(SUM(SCharge) AS FLOAT),2) SCharge, ROUND(CAST(SUM(Tips) AS FLOAT),2) Tips, ROUND(CAST(SUM(DecTips) AS FLOAT),2) DecTips
+			from #TempRpt_EmpSchedule 
+			WHERE JobDesc = 'Actual'
+			Group by SiteCode, UserID, TransDate, JobDesc) x on x.Transdate = d.TransDate
+
+INSERT Into #Rpt_EmpSchemaLabour (Sitecode, userID, TransDate, PayschemeVersionID, JobDesc, RoleID, RoleName, TransID, TransDesc, Value)
+Select Sitecode, UserID, TransDate, ISNULL(PaySchemeOverride,PayScheme), JobDesc, RoleID, RoleName, 40000, 'Service', SUM(SCharge)
+from #TempRpt_EmpSchedule
+group by Sitecode, UserID, TransDate, ISNULL(PaySchemeOverride,PayScheme), JobDesc, RoleID, RoleName
+
+INSERT Into #Rpt_EmpSchemaLabour (Sitecode, userID, TransDate, PayschemeVersionID, JobDesc, RoleID, RoleName, TransID, TransDesc, Value)
+Select Sitecode, UserID, TransDate, ISNULL(PaySchemeOverride,PayScheme), JobDesc, RoleID, RoleName, 50000, 
+CASE WHEN @UKUS = 'UK' THEN 'Tips' Else 'Charge Tips' END , SUM(Tips)
+from #TempRpt_EmpSchedule
+group by Sitecode, UserID, TransDate, ISNULL(PaySchemeOverride,PayScheme), JobDesc, RoleID, RoleName
+ 
+/*Declared Tips*/
+If @UKUS = 'US' 
+ INSERT Into #Rpt_EmpSchemaLabour (Sitecode, userID, TransDate, PayschemeVersionID, JobDesc, RoleID, RoleName, TransID, TransDesc, Value)
+ Select Sitecode, UserID, TransDate, ISNULL(PaySchemeOverride,PayScheme), JobDesc, RoleID, RoleName, 50001, 'Declared Tips' , SUM(DecTips)
+ from #TempRpt_EmpSchedule
+ group by Sitecode, UserID, TransDate, ISNULL(PaySchemeOverride,PayScheme), JobDesc, RoleID, RoleName
+
+
+INSERT Into #Rpt_EmpSchemaLabour (Sitecode, userID, TransDate, PayschemeVersionID, JobDesc, RoleID, RoleName, TransID, TransDesc, Value)
+Select Sitecode, UserID, TransDate, ISNULL(PaySchemeOverride,PayScheme), JobDesc, RoleID, RoleName, 60000, 
+'Net' , SUM(ISNULL(PayVal,0)-ISNULL(Inc,0)-ISNULL(Exc,0)-ISNULL(SCharge,0)-ISNULL(Tips,0))
+from #TempRpt_EmpSchedule
+group by Sitecode, UserID, TransDate, ISNULL(PaySchemeOverride,PayScheme), JobDesc, RoleID, RoleName
+Having SUM(PayVal-Inc-Exc-SCharge-Tips) <> 0
+
+If @UKUS = 'UK' 
+ INSERT Into #Rpt_EmpSchemaLabour (Sitecode, userID, TransDate, PayschemeVersionID, JobDesc, RoleID, RoleName, TransID, TransDesc, Value)
+ Select Sitecode, UserID, TransDate, ISNULL(PaySchemeOverride,PayScheme), JobDesc, RoleID, RoleName, 60000, 
+ 'Gross' , SUM(ISNULL(PayVal,0))
+ from #TempRpt_EmpSchedule
+ group by Sitecode, UserID, TransDate, ISNULL(PaySchemeOverride,PayScheme), JobDesc, RoleID, RoleName
+ Having SUM(PayVal) <> 0
+    
+INSERT Into #Rpt_EmpSchemaLabour (Sitecode, userID, TransDate,PayschemeVersionID, JobDesc, RoleID, RoleName, TransID, TransDesc, Value)
+Select Sitecode, Userid, Min(TransDate),  MAX(PayschemeVersionID),  JobDesc, RoleID, Rolename, 99999999, 'Wage %', 
+(SUM(CASE WHEN TransDesc LIKE '%~Cost' THEN Value ELSE 0 END)/
+NULLIF(SUM(CASE WHEN TransDesc = 'Net' THEN Value ELSE 0 END),0))*100
+FROM  #Rpt_EmpSchemaLabour
+Group by Sitecode, Userid, JobDesc, RoleID, Rolename
+
+
+INSERT Into #Rpt_EmpSchemaLabour (Sitecode, userID, TransDate, JobDesc, RoleID, RoleName, TransID, TransDesc, Value)
+Select Sitecode, 9999999999, @EndDate, JobDesc, -99, 'Total', TransID, TransDesc, SUM(case when transDesc Like '%~Rate' THEN 0 ELSE Value END) 
+FROM  #Rpt_EmpSchemaLabour
+Where TransID <> 99999999
+Group by Sitecode, JobDesc, TransID, TransDesc
+
+INSERT Into #Rpt_EmpSchemaLabour (Sitecode, userID, TransDate, JobDesc, RoleID, RoleName, TransID, TransDesc, Value)
+Select Sitecode, 9999999999, @EndDate, JobDesc, -99, 'Total', 99999999, 'Wage %', 
+(SUM(CASE WHEN TransDesc LIKE '%~Cost' THEN Value ELSE 0 END)/
+NULLIF(SUM(CASE WHEN TransDesc = 'Net' THEN Value ELSE 0 END),0))*100
+FROM  #Rpt_EmpSchemaLabour
+WHERE Rolename = 'Total'
+AND RoleID = -99
+Group by Sitecode, jobDesc
+
+
+Update r
+Set r.FullName = E.FirstName +' '+e.lastname,
+R.LastName = e.Lastname,
+R.Firstname = e.FirstName,
+R.EmployeeRefCode = e.ImportExportCode
+from #Rpt_EmpSchemaLabour r INNER JOIN Aztec.dbo.AC_user e on e.ID = R.UserID
+
+
+/*Multiple Job Totals*/
+
+IF OBJECT_ID('tempdb.dbo.#TempEmp') IS NOT NULL Drop Table #TempEmp
+
+Select Sitecode, r.UserID, fullname, LastName, @EndDate TransDate, r.JobDesc, 99 RoleGroupID, 99 RoleID, 'Total for Employee' RoleName, TransID, TransDesc, 
+(CASE WHEN TransDesc = 'Wage %' THEN 0 ELSE SUM(Value) END) Value
+INTO #TempEmp
+FROM  #Rpt_EmpSchemaLabour r 
+INNER JOIN (Select UserID, JobDesc, COUNT(distinct RoleId) RoleCount, COUNT(distinct PayschemeVersionID) PayCount
+   from #Rpt_EmpSchemaLabour
+   Where UserID <> 9999999999
+   Group by UserID, JobDesc
+   Having (COUNT(Distinct RoleId) > 1 OR COUNT(distinct PayschemeVersionID) > 1)) A on R.UserID = A.UserID  AND r.JobDesc = A.JobDesc
+Group by Sitecode, r.UserID, R.FullName, R.lastName, r.JobDesc, TransID, TransDesc
+
+
+INSERT Into #Rpt_EmpSchemaLabour (Sitecode, userID, FullName, LastName,TransDate, JobDesc, RoleGroupID, RoleID, RoleName, TransID, TransDesc, Value)
+Select * from #TempEmp
+
+Update r
+Set Value = (Select (SUM(CASE WHEN TransDesc LIKE '%~Cost' THEN ISNULL(Value,0) ELSE 0 END)/
+    NULLIF(SUM(CASE WHEN TransDesc = 'Net' THEN ISNULL(Value,0) ELSE 0 END),0))*100
+   from #Rpt_EmpSchemaLabour e
+   Where e.UserID = r.UserID
+   AND r.JobDesc = e.JobDesc
+   AND RoleGroupID = 99)
+from #Rpt_EmpSchemaLabour r
+Where RoleGroupID = 99
+AND TransDesc = 'Wage %'
+
+/* JobType Multiple Employee Totals*/
+IF OBJECT_ID('tempdb.dbo.#TempRole') IS NOT NULL Drop Table #TempRole
+
+Select Sitecode, 'Total For Job' FullName, @EndDate TransDate, r.JobDesc, 50 RoleGroupID, r.RoleID, RoleName, TransID, TransDesc, 
+(CASE WHEN TransDesc = 'Wage %' THEN 0 ELSE SUM(Value) END) Value
+INTO #TempRole
+FROM  #Rpt_EmpSchemaLabour r 
+INNER JOIN (Select RoleID, JobDesc, COUNT(distinct UserID) RoleCount
+   from #Rpt_EmpSchemaLabour
+   Where UserID <> 9999999999
+   AND ISNULL(RoleGroupID,0) <> 99
+   Group by RoleID, JobDesc
+   Having COUNT(Distinct UserID) > 1) A on R.RoleID = A.RoleID AND r.JobDesc = A.JobDesc
+Group by Sitecode, r.JobDesc, r.RoleID,  TransID, TransDesc, RoleName
+
+INSERT Into #Rpt_EmpSchemaLabour (Sitecode, FullName, TransDate, JobDesc, RoleGroupID, RoleID, RoleName, TransID, TransDesc, Value)
+Select * from #TempRole
+
+Update r
+Set Value = (Select (SUM(CASE WHEN TransDesc LIKE '%~Cost' THEN ISNULL(Value,0) ELSE 0 END)/
+    NULLIF(SUM(CASE WHEN TransDesc = 'Net' THEN ISNULL(Value,0) ELSE 0 END),0))*100
+   from #Rpt_EmpSchemaLabour e
+   Where e.RoleID = r.RoleID
+   AND RoleGroupID = 50)
+from #Rpt_EmpSchemaLabour r
+Where RoleGroupID = 50
+AND TransDesc = 'Wage %'
+
+Update r
+Set r.SiteName = s.Sitename,
+r.SiteRef = s.Reference
+from #Rpt_EmpSchemaLabour r INNER JOIN #Compdet s on r.sitecode = S.SiteCode
+
+Update r
+Set r.GroupID = CASE WHEN RoleName = 'Total' THEN 99 ELSE 1 END
+from #Rpt_EmpSchemaLabour r 
+
+Update #Rpt_EmpSchemaLabour
+Set RoleGroupID = 1
+Where RoleGroupID IS NULL
+
+--select * 
+--from #Rpt_EmpSchemaLabour
+
+IF OBJECT_ID('tempdb.dbo.#PayrollExport') IS NOT NULL Drop Table #PayrollExport
+
+select SiteCode, SiteName, SiteRef, UserId, Lastname, Firstname, RoleId, Rolename, PayschemeVersionID, '' AS [RolePayType],
+ ISNULL([Standard~Hours],0) as [StandardHours], 
+ ISNULL([Standard~Rate],0) as [StandardRate], 
+ ISNULL([Standard~Cost],0) as [StandardCost], 
+ ISNULL([Overtime~Hours],0) as [OvertimeHours], 
+ ISNULL([Overtime~Rate],0) as [OvertimeRate], 
+ ISNULL([Overtime~Cost],0) as [OvertimeCost], 
+ ISNULL([Service],0) as [Service], 
+ ISNULL([Charge Tips],0) as [ChargeTips], 
+ ISNULL([Declared Tips],0) as [DeclaredTips], 
+ ISNULL([Net],0) as [NetSales],
+ ISNULL([Wage %],0) as [Wage%]
+into #PayrollExport
+from 
+(
+select SiteCode, SiteName, SiteRef,UserId, Lastname, Firstname, RoleId, Rolename, PayschemeVersionID, TransDesc, SUM(Value) as Value
+from #Rpt_EmpSchemaLabour 
+where RoleGroupID <> 50 
+and JobDesc = 'Actual' 
+and UserID <> 9999999999 
+and RoleID <> 99 AND RoleGroupID <> 99
+and TransDate between @StartDate and @EndDate
+Group by SiteCode, SiteName, SiteRef, UserId, Lastname, Firstname, RoleId, Rolename, PayschemeVersionID, TransDesc
+) as x
+PIVOT 
+(
+	SUM(Value)
+	FOR TransDesc in ([Standard~Hours], [Standard~Rate], [Standard~Cost], [Overtime~Hours], [Overtime~Rate], [Overtime~Cost], [Service], [Charge Tips], [Declared Tips], [Net], [Wage %])
+) AS PayRoll
+ORDER By UserID
+--FOR XML RAW ('Data'), ROOT('PayrollExport')
+
+
+update #PayrollExport
+SET RolePayType = pt.RolePayType
+FROM #PayrollExport pe 
+JOIN
+(
+	SELECT ur.UserId, 
+	       ur.RoleId, 
+	       CASE WHEN pf.Id = 1 THEN 'H' ELSE 'S' END AS RolePayType,
+	       ISNULL(upo.CurrentUserPayRateOverrideVersionId, ps.CurrentPaySchemeVersionId) AS PaySchemeVersionId
+	FROM ac_UserRoles ur
+	JOIN ac_PayScheme ps ON ur.PaySchemeId = ps.Id
+	JOIN ac_PayFrequency pf ON ps.PayFrequencyId = pf.Id
+	JOIN ac_PaySchemeVersion psv ON ps.CurrentPaySchemeVersionId = psv.Id
+	LEFT JOIN ac_UserPayRateOverride upo ON ur.UserId = upo.UserId and ps.Id = upo.PaySchemeId
+  --WHERE ur.Deleted  = 0
+  --AND ps.Deleted = 0
+  --AND pf.Deleted = 0
+  --AND psv.Deleted = 0
+  --AND upo.Deleted = 0
+) pt
+ON pe.UserID = pt.UserId AND pe.RoleID = pt.RoleId AND pe.PayschemeVersionID = pt.PaySchemeVersionId
+
+select * from #PayrollExport]]>
+  </SqlScript>
+</SqlScripts>
