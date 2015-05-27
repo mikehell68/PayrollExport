@@ -108,6 +108,11 @@ namespace PayrollExport
             set { SetField(ref _maxStartDate, value, "MaxStartDate"); }
         }
 
+        public bool ExportPeriodEnabled
+        {
+            get { return PayrollExportConfiguration.ExportPeriodEnabled; }
+        }
+
         public bool DoExport(DateTime startDate, DateTime endDate)
         {
             Log.LogThis("Begin DoExort()", eloglevel.info);

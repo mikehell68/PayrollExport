@@ -24,6 +24,7 @@ namespace PayrollExport
 
             _exportPeriodComboBox.DataBindings.Add(new Binding("SelectedItem", _payrollExportModel, "SelectedExportPeriod", false, DataSourceUpdateMode.OnPropertyChanged));
 
+            _exportPeriodComboBox.Enabled = _payrollExportModel.ExportPeriodEnabled;
         }
 
         void PopulateExportPeriodCombobox()

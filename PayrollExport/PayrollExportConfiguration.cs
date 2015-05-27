@@ -21,6 +21,8 @@ namespace PayrollExport
         public static bool UseSSN { get; set; }
         public static List<ExportPeriod> ExportPeriods { get; set; }
         public static int WorkedJobsPerRow { get; set; }
+        public static bool ExportPeriodEnabled { get; set; }
+        public static int DefaultExportPeriod { get; set; }
 
         public static XDocument PayrollExportConfig
         {
@@ -48,23 +50,44 @@ namespace PayrollExport
 
                 UseExportEndDay = bool.Parse(_payrollExportConfig.Root.Element("ExportEndDay").Attribute("enabled").Value);
                 UseSSN = bool.Parse(_payrollExportConfig.Root.Element("OptionalOutput").Attribute("SSN").Value);
+                ExportPeriodEnabled = bool.Parse(_payrollExportConfig.Root.Element("ExportPeriods").Attribute("enabled").Value);
+                DefaultExportPeriod = int.Parse(_payrollExportConfig.Root.Element("ExportPeriods").Attribute("defaultPeriodIndex").Value);
 
                 ExportPeriods = new List<ExportPeriod>();
-                foreach (var exportPeriod in _payrollExportConfig.Root.Element("ExportPeriods").Descendants("ExportPeriod"))
+
+                if (!ExportPeriodEnabled)
                 {
-                    ExportPeriodEnum periodIndex;
-                    
-                    if (!Enum.TryParse(exportPeriod.Attribute("index").Value, out periodIndex))
-                        continue;
+                    var defaultExportPeriod = _payrollExportConfig.Root.Element("ExportPeriods").Descendants("ExportPeriod").Where(e => e.Attribute("index").Value == DefaultExportPeriod.ToString()).FirstOrDefault();
+
+                    ExportPeriodEnum defaultExportPeriodEnum;
+
+                    if (!Enum.TryParse(defaultExportPeriod.Attribute("index").Value, out defaultExportPeriodEnum))
+                        defaultExportPeriodEnum = ExportPeriodEnum.OneWeek;
 
                     ExportPeriods.Add(new ExportPeriod
                                           {
-                                              PeriodIndex = periodIndex,
-                                              DisplayName = exportPeriod.Attribute("displayName").Value,
-                                              Visible = bool.Parse(exportPeriod.Attribute("visible").Value)
+                                              PeriodIndex = defaultExportPeriodEnum,
+                                              DisplayName = defaultExportPeriod.Attribute("displayName").Value,
+                                              Visible = true
                                           });
                 }
-                
+                else
+                {
+                    foreach (var exportPeriod in _payrollExportConfig.Root.Element("ExportPeriods").Descendants("ExportPeriod"))
+                    {
+                        ExportPeriodEnum periodIndex;
+
+                        if (!Enum.TryParse(exportPeriod.Attribute("index").Value, out periodIndex))
+                            continue;
+
+                        ExportPeriods.Add(new ExportPeriod
+                                              {
+                                                  PeriodIndex = periodIndex,
+                                                  DisplayName = exportPeriod.Attribute("displayName").Value,
+                                                  Visible = bool.Parse(exportPeriod.Attribute("visible").Value)
+                                              });
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -86,6 +109,8 @@ namespace PayrollExport
             ExportEndDay = DayOfWeek.Sunday;
             UseExportEndDay = true;
             UseSSN = false;
+            ExportPeriodEnabled = false;
+            DefaultExportPeriod = 0;
         }
 
         public new static string ToString()
@@ -102,6 +127,8 @@ namespace PayrollExport
             str.AppendLine("UseExportEndDay: " + UseExportEndDay);
             str.AppendLine("UseSSN: " + UseSSN);
             str.AppendLine("WorkedJobsPerRow: " + WorkedJobsPerRow);
+            str.AppendLine("ExportPeriodEnabled: " + ExportPeriodEnabled);
+            str.AppendLine("DefaultExportPeriod: " + DefaultExportPeriod);
 
             return str.ToString();
         }

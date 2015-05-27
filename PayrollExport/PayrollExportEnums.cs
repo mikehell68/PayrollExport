@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace PayrollExport
+﻿namespace PayrollExport
 {
     public enum ExportPeriodEnum
     {
