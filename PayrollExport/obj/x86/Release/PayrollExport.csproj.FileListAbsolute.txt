@@ -6,3 +6,11 @@ E:\Visual Studio 2010\Projects\PayrollExport\PayrollExport\obj\x86\Release\Payro
 E:\Visual Studio 2010\Projects\PayrollExport\PayrollExport\obj\x86\Release\PayrollExport.csproj.GenerateResource.Cache
 E:\Visual Studio 2010\Projects\PayrollExport\PayrollExport\obj\x86\Release\PayrollExport.exe
 E:\Visual Studio 2010\Projects\PayrollExport\PayrollExport\obj\x86\Release\PayrollExport.pdb
+C:\Users\michaelh\Documents\GitHub\PayrollExport\PayrollExport\obj\x86\Release\PayrollExport.exe
+C:\Users\michaelh\Documents\GitHub\PayrollExport\PayrollExport\obj\x86\Release\PayrollExport.pdb
+C:\Users\michaelh\Documents\GitHub\PayrollExport\PayrollExport\bin\Release\Configuration\PayrollExportConfig.xml
+C:\Users\michaelh\Documents\GitHub\PayrollExport\PayrollExport\bin\Release\PayrollExport.exe
+C:\Users\michaelh\Documents\GitHub\PayrollExport\PayrollExport\bin\Release\PayrollExport.pdb
+C:\Users\michaelh\Documents\GitHub\PayrollExport\PayrollExport\obj\x86\Release\PayrollExport._payrollExportMainForm.resources
+C:\Users\michaelh\Documents\GitHub\PayrollExport\PayrollExport\obj\x86\Release\PayrollExport.Properties.Resources.resources
+C:\Users\michaelh\Documents\GitHub\PayrollExport\PayrollExport\obj\x86\Release\PayrollExport.csproj.GenerateResource.Cache

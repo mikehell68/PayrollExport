@@ -127,13 +127,12 @@ namespace PayrollExport
             string fileHeaderRow = "SiteName,SiteRef,StartDate,EndDate";
 
             sb.AppendLine(fileHeaderRow);
+            siteRef = (string)payrollResultSet.Tables[0].Rows[0]["SiteRef"];
 
-            sb.AppendLine((string) payrollResultSet.Tables[0].Rows[0]["SiteName"]+","+
-                          (string) payrollResultSet.Tables[0].Rows[0]["SiteRef"]+","+ 
-                          startDate.ToShortDateString()+","+ 
+            sb.AppendLine( QuoteIfCommaExists((string) payrollResultSet.Tables[0].Rows[0]["SiteName"]) + "," +
+                          QuoteIfCommaExists(siteRef) + "," + 
+                          startDate.ToShortDateString() + "," + 
                           endDate.ToShortDateString());
-
-            siteRef = (string) payrollResultSet.Tables[0].Rows[0]["SiteRef"];
 
             string payrollHeaderRow = "LastName,FirstName,EmpRef,NetSales,ChargedSales,ChargedTips,DeclaredTips";
             //"LastName,FirstName,EmpRef,NetSales,ChargedSales,ChargedTips,DeclaredTips,JobName1,JobCode1,PayType1,RegHours1,RegRate1,OTHours1,OTRate1,JobName2,JobCode2,PayType2,RegHours2,RegRate2,OTHours2,OTRate2,JobName3,JobCode3,PayType3,RegHours3,RegRate3,OTHours3,OTRate3,JobName4,JobCode4,PayType4,RegHours4,RegRate4,OTHours4,OTRate4";
@@ -165,13 +164,22 @@ namespace PayrollExport
                         sb.AppendLine(userPayrollRecord);
                     }
 
-                    userPayrollRecord = row["LastName"] + "," + row["FirstName"] + "," + row["UserId"] + "," +
-                                        row["NetSales"] + "," + row["NetSales"] + "," + row["ChargeTips"] + "," +
+                    userPayrollRecord = QuoteIfCommaExists((string)row["LastName"]) + "," + 
+                                        QuoteIfCommaExists((string)row["FirstName"]) + "," + 
+                                        row["UserId"] + "," +
+                                        row["NetSales"] + "," + 
+                                        row["NetSales"] + "," + 
+                                        row["ChargeTips"] + "," +
                                         row["DeclaredTips"];
 
-                    userPayrollRecord += "," + row["RoleName"] + "," + row["RoleId"] + "," + row["RolePayType"] + "," +
-                                     row["StandardHours"] + "," + row["StandardRate"] + "," + row["OverTimeHours"] + "," +
-                                     row["OverTimeRate"];
+                    userPayrollRecord += "," + 
+                                         QuoteIfCommaExists((string)row["RoleName"]) + "," + 
+                                         row["RoleId"] + "," + 
+                                         row["RolePayType"] + "," +
+                                         row["StandardHours"] + "," + 
+                                         row["StandardRate"] + "," + 
+                                         row["OverTimeHours"] + "," +
+                                         row["OverTimeRate"];
 
                     currentUserId = (long) row["UserId"];
                     currentRoleId = (int) row["RoleId"];
@@ -179,9 +187,13 @@ namespace PayrollExport
                 }
                 else if (currentUserId == (long)row["UserId"] && currentRoleId != (int)row["RoleId"] && workedJobCount <= PayrollExportConfiguration.WorkedJobsPerRow)
                 {
-                    userPayrollRecord += "," + row["RoleName"] + "," + row["RoleId"] + "," + row["RolePayType"] + "," +
-                                     row["StandardHours"] + "," + row["StandardRate"] + "," + row["OverTimeHours"] + "," +
-                                     row["OverTimeRate"];
+                    userPayrollRecord += "," + 
+                                         QuoteIfCommaExists((string)row["RoleName"]) + "," + 
+                                         row["RoleId"] + "," + row["RolePayType"] + "," +
+                                         row["StandardHours"] + "," + 
+                                         row["StandardRate"] + "," + 
+                                         row["OverTimeHours"] + "," +
+                                         row["OverTimeRate"];
 
                     workedJobCount++;
                 }
@@ -309,6 +321,14 @@ namespace PayrollExport
         {
             MaxEndDate = DateTime.Now;
             MaxStartDate = MaxEndDate;
+        }
+
+        string QuoteIfCommaExists(string value)
+        {
+            if (value.Contains(","))
+                return string.Format("\"{0}\"", value);
+
+            return value;
         }
     }
 
