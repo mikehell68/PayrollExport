@@ -22,7 +22,7 @@ namespace PayrollExport
         public static List<ExportPeriod> ExportPeriods { get; set; }
         public static int WorkedJobsPerRow { get; set; }
         public static bool ExportPeriodEnabled { get; set; }
-        public static int DefaultExportPeriod { get; set; }
+        public static ExportPeriodEnum DefaultExportPeriod { get; set; }
 
         public static XDocument PayrollExportConfig
         {
@@ -51,23 +51,25 @@ namespace PayrollExport
                 UseExportEndDay = bool.Parse(_payrollExportConfig.Root.Element("ExportEndDay").Attribute("enabled").Value);
                 UseSSN = bool.Parse(_payrollExportConfig.Root.Element("OptionalOutput").Attribute("SSN").Value);
                 ExportPeriodEnabled = bool.Parse(_payrollExportConfig.Root.Element("ExportPeriods").Attribute("enabled").Value);
-                DefaultExportPeriod = int.Parse(_payrollExportConfig.Root.Element("ExportPeriods").Attribute("defaultPeriodIndex").Value);
+                var defaultExportPeriod = int.Parse(_payrollExportConfig.Root.Element("ExportPeriods").Attribute("defaultPeriodIndex").Value);
 
                 ExportPeriods = new List<ExportPeriod>();
 
                 if (!ExportPeriodEnabled)
                 {
-                    var defaultExportPeriod = _payrollExportConfig.Root.Element("ExportPeriods").Descendants("ExportPeriod").Where(e => e.Attribute("index").Value == DefaultExportPeriod.ToString()).FirstOrDefault();
+                    var defaultExportPeriodElement = _payrollExportConfig.Root.Element("ExportPeriods").Descendants("ExportPeriod").Where(e => e.Attribute("index").Value == defaultExportPeriod.ToString()).FirstOrDefault();
 
                     ExportPeriodEnum defaultExportPeriodEnum;
 
-                    if (!Enum.TryParse(defaultExportPeriod.Attribute("index").Value, out defaultExportPeriodEnum))
-                        defaultExportPeriodEnum = ExportPeriodEnum.OneWeek;
+                    if (!Enum.TryParse(defaultExportPeriodElement.Attribute("index").Value, out defaultExportPeriodEnum))
+                        DefaultExportPeriod = ExportPeriodEnum.OneWeek;
+                    else
+                        DefaultExportPeriod = defaultExportPeriodEnum;
 
                     ExportPeriods.Add(new ExportPeriod
                                           {
-                                              PeriodIndex = defaultExportPeriodEnum,
-                                              DisplayName = defaultExportPeriod.Attribute("displayName").Value,
+                                              PeriodIndex = DefaultExportPeriod,
+                                              DisplayName = defaultExportPeriodElement.Attribute("displayName").Value,
                                               Visible = true
                                           });
                 }

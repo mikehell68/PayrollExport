@@ -36,7 +36,7 @@ namespace PayrollExport
         {
             PeriodEndDate = DateTime.Now;
             PayrollExportConfiguration.LoadConfigFile();
-            SelectedExportPeriod = PayrollExportConfiguration.ExportPeriods.FirstOrDefault(p => p.PeriodIndex == 0) ??
+            SelectedExportPeriod = PayrollExportConfiguration.ExportPeriods.FirstOrDefault(p => p.PeriodIndex == PayrollExportConfiguration.DefaultExportPeriod) ??
                                    new ExportPeriod
                                        {
                                            DisplayName = "1 Week", 

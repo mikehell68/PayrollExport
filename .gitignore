@@ -41,3 +41,10 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+*.csv
+*.csv.*
+PayrollExport/bin/Release/PayrollExportFiles/ExportBackup/209_20150330_20150412.csv.20150527_123958
+PayrollExport/bin/Release/PayrollExportFiles/ExportBackup/209_20150406_20150412.csv.20150527_115854
+PayrollExport/bin/Release/PayrollExportFiles/ExportBackup/209_20150406_20150412.csv.20150527_120039
+*.exe
+*.pdb
