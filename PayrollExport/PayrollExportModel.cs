@@ -142,7 +142,7 @@ namespace PayrollExport
             var payrollHeaderRow = "LastName,FirstName,EmpRef,NetSales,ChargedSales,ChargedTips,DeclaredTips";
 
             if(PayrollExportConfiguration.UseSocialSecurityNo)
-                payrollHeaderRow = "LastName,FirstName,SSN, EmpRef,NetSales,ChargedSales,ChargedTips,DeclaredTips";
+                payrollHeaderRow = "SSN,LastName,FirstName,EmpRef,NetSales,ChargedSales,ChargedTips,DeclaredTips";
             
             const string workedJobsHeaderFormatStr = ",JobName{0},JobCode{0},PayType{0},RegHours{0},RegRate{0},OTHours{0},OTRate{0}";
             string workedJobsHeaderStr = "";
@@ -185,14 +185,10 @@ namespace PayrollExport
                     }
 
                     userDetailsCsv = QuoteIfCommaExists((string) row["LastName"]) + "," +
-                                     QuoteIfCommaExists((string) row["FirstName"]) + ",";
 
                     if (PayrollExportConfiguration.UseSocialSecurityNo)
-                        userDetailsCsv += row["SSNo"] + "," + row["UserId"] + ",";
-                    else
-                        userDetailsCsv += row["UserId"] + ",";
-
-                   
+                        userDetailsCsv = row["SSNo"] +","+ userDetailsCsv;
+                    
                     netSalesTotal += (decimal)row["NetSales"];
                     chargedSalesTotal += (decimal)row["NetSales"];
                     chargeTipsTotal += (decimal)row["ChargeTips"];
