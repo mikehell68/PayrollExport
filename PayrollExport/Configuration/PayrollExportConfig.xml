@@ -22,6 +22,6 @@
   <HoursFormat decimal="true"/>
   <PaySchemes hourly="true" salary="false"/>
   <ExportEndDay enabled="true" day="Sunday"/>
-  <OptionalOutput SSN="false"/>
+  <OptionalOutput SSN="true" UserDefinedFieldId="1"/>
   <WorkedJobsPerRow value="4"/>
 </PayrollExportConfig>

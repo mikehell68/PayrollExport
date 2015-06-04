@@ -18,7 +18,8 @@ namespace PayrollExport
         public static bool ExportSalaryPaid { get; set; }
         public static DayOfWeek ExportEndDay { get; set; }
         public static bool UseExportEndDay { get; set; }
-        public static bool UseSSN { get; set; }
+        public static bool UseSocialSecurityNo { get; set; }
+        public static int SocialSecurityNoUdfId { get; set; }
         public static List<ExportPeriod> ExportPeriods { get; set; }
         public static int WorkedJobsPerRow { get; set; }
         public static bool ExportPeriodEnabled { get; set; }
@@ -49,7 +50,8 @@ namespace PayrollExport
                     ExportEndDay = exportEndDay;
 
                 UseExportEndDay = bool.Parse(_payrollExportConfig.Root.Element("ExportEndDay").Attribute("enabled").Value);
-                UseSSN = bool.Parse(_payrollExportConfig.Root.Element("OptionalOutput").Attribute("SSN").Value);
+                UseSocialSecurityNo = bool.Parse(_payrollExportConfig.Root.Element("OptionalOutput").Attribute("SSN").Value);
+                SocialSecurityNoUdfId = int.Parse(_payrollExportConfig.Root.Element("OptionalOutput").Attribute("UserDefinedFieldId").Value);
                 ExportPeriodEnabled = bool.Parse(_payrollExportConfig.Root.Element("ExportPeriods").Attribute("enabled").Value);
                 var defaultExportPeriod = int.Parse(_payrollExportConfig.Root.Element("ExportPeriods").Attribute("defaultPeriodIndex").Value);
 
@@ -110,7 +112,8 @@ namespace PayrollExport
             ExportSalaryPaid = false;
             ExportEndDay = DayOfWeek.Sunday;
             UseExportEndDay = true;
-            UseSSN = false;
+            UseSocialSecurityNo = false;
+            SocialSecurityNoUdfId = 1;
             ExportPeriodEnabled = false;
             DefaultExportPeriod = 0;
         }
@@ -127,7 +130,8 @@ namespace PayrollExport
             str.AppendLine("ExportSalaryPaid: " + ExportSalaryPaid);
             str.AppendLine("ExportEndDay: " + ExportEndDay);
             str.AppendLine("UseExportEndDay: " + UseExportEndDay);
-            str.AppendLine("UseSSN: " + UseSSN);
+            str.AppendLine("UseSocialSecurityNo: " + UseSocialSecurityNo);
+            str.AppendLine("SocialSecurityNoUdfId: " + SocialSecurityNoUdfId);
             str.AppendLine("WorkedJobsPerRow: " + WorkedJobsPerRow);
             str.AppendLine("ExportPeriodEnabled: " + ExportPeriodEnabled);
             str.AppendLine("DefaultExportPeriod: " + DefaultExportPeriod);

@@ -1142,7 +1142,7 @@ Where RoleGroupID IS NULL
 
 IF OBJECT_ID('tempdb.dbo.#PayrollExport') IS NOT NULL Drop Table #PayrollExport
 
-select SiteCode, SiteName, SiteRef, UserId, Lastname, Firstname, RoleId, Rolename, PayschemeVersionID, '' AS [RolePayType],
+select SiteCode, SiteName, SiteRef, UserId, Lastname, Firstname, RoleId, Rolename, PayschemeVersionID, '' AS [RolePayType], CAST(NULL AS VARCHAR) AS [SSNo],
  ISNULL([Standard~Hours],0) as [StandardHours], 
  ISNULL([Standard~Rate],0) as [StandardRate], 
  ISNULL([Standard~Cost],0) as [StandardCost], 
@@ -1196,6 +1196,12 @@ JOIN
   --AND upo.Deleted = 0
 ) pt
 ON pe.UserID = pt.UserId AND pe.RoleID = pt.RoleId AND pe.PayschemeVersionID = pt.PaySchemeVersionId
+
+UPDATE #PayrollExport
+SET SSNo = udfv.Value
+FROM #PayrollExport pe 
+ LEFT JOIN ac_UserDefinedFieldValues udfv ON pe.UserID = udfv.UserId
+WHERE udfv.UserDefinedFieldId = {2}
 
 select * from #PayrollExport]]>
   </SqlScript>

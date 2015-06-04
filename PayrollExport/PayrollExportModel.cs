@@ -118,7 +118,6 @@ namespace PayrollExport
             Log.LogThis("Begin DoExort()", eloglevel.info);
             Log.LogThis(string.Format("Generating payroll export for {0} to {1}", startDate, endDate), eloglevel.info);
 
-            var siteRef = "";
             var sb = new StringBuilder(); 
             var payrollResultSet = AztecBusinessService.GetPayrollDataFromAztec(startDate, endDate);
 
@@ -129,20 +128,23 @@ namespace PayrollExport
                 return false;
             }
 
-            string fileHeaderRow = "SiteName,SiteRef,StartDate,EndDate";
+            const string fileHeaderRow = "SiteName,SiteRef,StartDate,EndDate";
 
             sb.AppendLine(fileHeaderRow);
-            siteRef = (string)payrollResultSet.Tables[0].Rows[0]["SiteRef"];
+            var siteRef = (string)payrollResultSet.Tables[0].Rows[0]["SiteRef"];
 
             sb.AppendLine( QuoteIfCommaExists((string) payrollResultSet.Tables[0].Rows[0]["SiteName"]) + "," +
                           QuoteIfCommaExists(siteRef) + "," + 
                           startDate.ToShortDateString() + "," + 
                           endDate.ToShortDateString());
 
-            string payrollHeaderRow = "LastName,FirstName,EmpRef,NetSales,ChargedSales,ChargedTips,DeclaredTips";
             //"LastName,FirstName,EmpRef,NetSales,ChargedSales,ChargedTips,DeclaredTips,JobName1,JobCode1,PayType1,RegHours1,RegRate1,OTHours1,OTRate1,JobName2,JobCode2,PayType2,RegHours2,RegRate2,OTHours2,OTRate2,JobName3,JobCode3,PayType3,RegHours3,RegRate3,OTHours3,OTRate3,JobName4,JobCode4,PayType4,RegHours4,RegRate4,OTHours4,OTRate4";
+            var payrollHeaderRow = "LastName,FirstName,EmpRef,NetSales,ChargedSales,ChargedTips,DeclaredTips";
 
-            string workedJobsHeaderFormatStr = ",JobName{0},JobCode{0},PayType{0},RegHours{0},RegRate{0},OTHours{0},OTRate{0}";
+            if(PayrollExportConfiguration.UseSocialSecurityNo)
+                payrollHeaderRow = "LastName,FirstName,SSN, EmpRef,NetSales,ChargedSales,ChargedTips,DeclaredTips";
+            
+            const string workedJobsHeaderFormatStr = ",JobName{0},JobCode{0},PayType{0},RegHours{0},RegRate{0},OTHours{0},OTRate{0}";
             string workedJobsHeaderStr = "";
 
             for (int i = 1; i <= PayrollExportConfiguration.WorkedJobsPerRow; i++)
@@ -183,8 +185,12 @@ namespace PayrollExport
                     }
 
                     userDetailsCsv = QuoteIfCommaExists((string) row["LastName"]) + "," +
-                                     QuoteIfCommaExists((string) row["FirstName"]) + "," +
-                                     row["UserId"] + ",";
+                                     QuoteIfCommaExists((string) row["FirstName"]) + ",";
+
+                    if (PayrollExportConfiguration.UseSocialSecurityNo)
+                        userDetailsCsv += row["SSNo"] + "," + row["UserId"] + ",";
+                    else
+                        userDetailsCsv += row["UserId"] + ",";
 
                    
                     netSalesTotal += (decimal)row["NetSales"];
@@ -337,7 +343,7 @@ namespace PayrollExport
             }
         }
 
-        int GetDaysForPeriod(int weekMultipier)
+        static int GetDaysForPeriod(int weekMultipier)
         {
             return -(weekMultipier * 7 - 1);
         }
@@ -348,7 +354,7 @@ namespace PayrollExport
             MaxStartDate = MaxEndDate;
         }
 
-        string QuoteIfCommaExists(string value)
+        static string QuoteIfCommaExists(string value)
         {
             if (value.Contains(","))
                 return string.Format("\"{0}\"", value);

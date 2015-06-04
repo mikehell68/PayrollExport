@@ -87,7 +87,7 @@ namespace PayrollExport.BusinessServices
                     var sqlScript = _sqlScripts.Descendants("SqlScript").Where(
                             s => s.Attribute("Name").Value == "PayrollExportActual").FirstOrDefault().Value;
 
-                    sqlScript = string.Format(sqlScript, startDate.ToString("yyyy-MM-dd"), endDate.ToString("yyyy-MM-dd"));
+                    sqlScript = string.Format(sqlScript, startDate.ToString("yyyy-MM-dd"), endDate.ToString("yyyy-MM-dd"), PayrollExportConfiguration.SocialSecurityNoUdfId);
 
                     cmd.CommandText = sqlScript;
                     cmd.CommandTimeout = 0;
