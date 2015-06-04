@@ -248,8 +248,8 @@ namespace PayrollExport
                 File.Delete(file);
             }
 
-            var filename = string.Format("{0}_{1}_{2}.csv", siteRef, startDate.ToString("yyyyMMdd"),
-                                         endDate.ToString("yyyyMMdd"));
+            var filename = string.Format("{0}_{1}_{2}.csv", siteRef, startDate.ToString("MMddyyyy"),
+                                         endDate.ToString("MMddyyyy"));
 
             using (FileStream fs = File.Create(PayrollExportConfiguration.ExportFileSaveLocation + "\\" + filename))
             {

@@ -114,7 +114,7 @@
             // 
             // _endDate
             // 
-            this._endDate.CustomFormat = "ddd dd MMM yyyy";
+            this._endDate.CustomFormat = "ddd MMM dd yyyy";
             this._endDate.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
             this._endDate.Location = new System.Drawing.Point(82, 56);
             this._endDate.Name = "_endDate";
@@ -123,7 +123,7 @@
             // 
             // _startDate
             // 
-            this._startDate.CustomFormat = "ddd dd MMM yyyy";
+            this._startDate.CustomFormat = "ddd MMM dd yyyy";
             this._startDate.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
             this._startDate.Location = new System.Drawing.Point(82, 3);
             this._startDate.Name = "_startDate";
@@ -184,7 +184,7 @@
             // exportToolStripMenuItem
             // 
             this.exportToolStripMenuItem.Name = "exportToolStripMenuItem";
-            this.exportToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.exportToolStripMenuItem.Size = new System.Drawing.Size(107, 22);
             this.exportToolStripMenuItem.Text = "Export";
             this.exportToolStripMenuItem.Click += new System.EventHandler(this.exportToolStripMenuItem_Click);
             // 
@@ -196,7 +196,7 @@
             // closeToolStripMenuItem
             // 
             this.closeToolStripMenuItem.Name = "closeToolStripMenuItem";
-            this.closeToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.closeToolStripMenuItem.Size = new System.Drawing.Size(107, 22);
             this.closeToolStripMenuItem.Text = "Close";
             this.closeToolStripMenuItem.Click += new System.EventHandler(this.closeToolStripMenuItem_Click);
             // 
