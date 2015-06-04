@@ -8,7 +8,7 @@
   </SettingsComponent>
   <CompletionStatisticsManager>
     <ItemStatistics item="Default">
-      <Item value="string" priority="3" />
+      <Item value="string" priority="6" />
       <Item value="if" priority="1" />
       <Item value="value" priority="2" />
       <Item value="return" priority="1" />
@@ -32,6 +32,7 @@
       <Item value="else" priority="0" />
       <Item value="_payrollExportModel" priority="0" />
       <Item value="ExportPeriodEnum`0" priority="0" />
+      <Item value="decimal" priority="5" />
     </ItemStatistics>
     <ItemStatistics item="Qualified:System.String">
       <Item value="Contains`0" priority="0" />
@@ -62,24 +63,27 @@
     <ItemStatistics item="Qualified:System.Windows.Forms.ComboBox">
       <Item value="Enabled" priority="1" />
     </ItemStatistics>
+    <ItemStatistics item="Qualified:@System.Decimal">
+      <Item value="Parse`0" priority="0" />
+    </ItemStatistics>
   </CompletionStatisticsManager>
   <RecentFiles>
     <RecentFiles>
       <File id="245FF979-0057-4F56-9308-65515E8EC3CD/d:Configuration/f:PayrollExportConfig.xml" caret="222" fromTop="3" />
       <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:Program.cs" caret="1041" fromTop="20" />
-      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportMainForm.cs" caret="1921" fromTop="25" />
       <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportEnums.cs" caret="44" fromTop="2" />
       <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportConfiguration.cs" caret="4049" fromTop="27" />
-      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportModel.cs" caret="10695" fromTop="20" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportMainForm.cs" caret="3461" fromTop="31" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportModel.cs" caret="7607" fromTop="23" />
     </RecentFiles>
     <RecentEdits>
-      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportModel.cs" caret="14001" fromTop="36" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportModel.cs" caret="14573" fromTop="36" />
       <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportModel.cs" caret="4764" fromTop="17" />
       <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportModel.cs" caret="4905" fromTop="28" />
       <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportModel.cs" caret="4757" fromTop="18" />
-      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportModel.cs" caret="7172" fromTop="20" />
-      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportModel.cs" caret="7572" fromTop="31" />
-      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportModel.cs" caret="8450" fromTop="33" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportModel.cs" caret="7744" fromTop="20" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportModel.cs" caret="8144" fromTop="31" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportModel.cs" caret="9022" fromTop="33" />
       <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportEnums.cs" caret="0" fromTop="0" />
       <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportConfiguration.cs" caret="5783" fromTop="23" />
       <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportConfiguration.cs" caret="5010" fromTop="21" />
@@ -95,6 +99,10 @@
       <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportConfiguration.cs" caret="3149" fromTop="17" />
       <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportConfiguration.cs" caret="3682" fromTop="21" />
       <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportConfiguration.cs" caret="3955" fromTop="26" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportModel.cs" caret="7052" fromTop="21" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportModel.cs" caret="6232" fromTop="11" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportModel.cs" caret="7365" fromTop="31" />
+      <File id="245FF979-0057-4F56-9308-65515E8EC3CD/f:PayrollExportModel.cs" caret="6752" fromTop="22" />
     </RecentEdits>
   </RecentFiles>
   <NAntValidationSettings>

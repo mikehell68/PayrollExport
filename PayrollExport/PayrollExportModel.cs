@@ -156,7 +156,13 @@ namespace PayrollExport
             long currentRoleId = -1;
             int workedJobCount = 0;
             
-            string userPayrollRecord = "";
+            var userDetailsCsv = "";
+            var jobsDetailsCsv = "";
+
+            decimal netSalesTotal = 0;
+            decimal chargedSalesTotal = 0;
+            decimal chargeTipsTotal = 0;
+            decimal declaredTipsTotal = 0;
 
             foreach (DataRow row in payrollResultSet.Tables[0].Rows)
             {
@@ -165,19 +171,28 @@ namespace PayrollExport
                     if (workedJobCount != 0 && workedJobCount < PayrollExportConfiguration.WorkedJobsPerRow)
                     {
                         for (int i = workedJobCount; i <= PayrollExportConfiguration.WorkedJobsPerRow; i++)
-                            userPayrollRecord += ",,,,,,,";
-                        sb.AppendLine(userPayrollRecord);
+                            jobsDetailsCsv += ",,,,,,,";
+
+                        var totalsCsv = string.Format("{0},{1},{2},{3}", netSalesTotal, chargedSalesTotal, chargeTipsTotal, declaredTipsTotal);
+                        sb.AppendLine(userDetailsCsv + totalsCsv + jobsDetailsCsv);
+
+                        netSalesTotal = 0;
+                        chargedSalesTotal = 0;
+                        chargeTipsTotal = 0;
+                        declaredTipsTotal = 0;
                     }
 
-                    userPayrollRecord = QuoteIfCommaExists((string)row["LastName"]) + "," + 
-                                        QuoteIfCommaExists((string)row["FirstName"]) + "," + 
-                                        row["UserId"] + "," +
-                                        row["NetSales"] + "," + 
-                                        row["NetSales"] + "," + 
-                                        row["ChargeTips"] + "," +
-                                        row["DeclaredTips"];
+                    userDetailsCsv = QuoteIfCommaExists((string) row["LastName"]) + "," +
+                                     QuoteIfCommaExists((string) row["FirstName"]) + "," +
+                                     row["UserId"] + ",";
 
-                    userPayrollRecord += "," + 
+                   
+                    netSalesTotal += (decimal)row["NetSales"];
+                    chargedSalesTotal += (decimal)row["NetSales"];
+                    chargeTipsTotal += (decimal)row["ChargeTips"];
+                    declaredTipsTotal += (decimal)row["DeclaredTips"];
+
+                    jobsDetailsCsv = "," + 
                                          QuoteIfCommaExists((string)row["RoleName"]) + "," + 
                                          row["RoleId"] + "," + 
                                          row["RolePayType"] + "," +
@@ -192,13 +207,18 @@ namespace PayrollExport
                 }
                 else if (currentUserId == (long)row["UserId"] && currentRoleId != (int)row["RoleId"] && workedJobCount <= PayrollExportConfiguration.WorkedJobsPerRow)
                 {
-                    userPayrollRecord += "," + 
+                    jobsDetailsCsv += "," + 
                                          QuoteIfCommaExists((string)row["RoleName"]) + "," + 
                                          row["RoleId"] + "," + row["RolePayType"] + "," +
                                          row["StandardHours"] + "," + 
                                          row["StandardRate"] + "," + 
                                          row["OverTimeHours"] + "," +
                                          row["OverTimeRate"];
+
+                    netSalesTotal += (decimal)row["NetSales"];
+                    chargedSalesTotal += (decimal)row["NetSales"];
+                    chargeTipsTotal += (decimal)row["ChargeTips"];
+                    declaredTipsTotal += (decimal)row["DeclaredTips"];
 
                     workedJobCount++;
                 }

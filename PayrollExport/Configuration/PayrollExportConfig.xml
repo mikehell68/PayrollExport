@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <PayrollExportConfig>
   <ExportFileSaveLocation path="PayrollExportFiles\Export" backupPath="PayrollExportFiles\ExportBackup"/>
-  <ExportPeriods enabled="false" defaultPeriodIndex="1">
+  <ExportPeriods enabled="false" defaultPeriodIndex="0">
     <ExportPeriod index="0" displayName="1 Week" visible="true"/>
     <ExportPeriod index="1" displayName="2 Weeks" visible="true"/>
     <ExportPeriod index="2" displayName="3 Weeks" visible="false"/>

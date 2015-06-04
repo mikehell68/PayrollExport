@@ -86,6 +86,7 @@
   <ItemGroup>
     <Content Include="Configuration\PayrollExportConfig.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
     </Content>
     <EmbeddedResource Include="Scripts\SqlScripts.xml">
       <SubType>Designer</SubType>
