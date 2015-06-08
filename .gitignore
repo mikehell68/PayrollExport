@@ -84,3 +84,5 @@ _ReSharper.PayrollExport/BuildScriptCache/.crc
 *.crc
 *.crc
 *.suo
+*.user
+*.suo

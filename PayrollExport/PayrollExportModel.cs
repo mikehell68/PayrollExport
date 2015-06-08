@@ -185,6 +185,8 @@ namespace PayrollExport
                     }
 
                     userDetailsCsv = QuoteIfCommaExists((string) row["LastName"]) + "," +
+                                     QuoteIfCommaExists((string) row["FirstName"]) + "," +
+                                     row["UserId"] + ",";
 
                     if (PayrollExportConfiguration.UseSocialSecurityNo)
                         userDetailsCsv = row["SSNo"] +","+ userDetailsCsv;
