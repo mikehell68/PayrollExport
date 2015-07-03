@@ -1203,6 +1203,6 @@ FROM #PayrollExport pe
  LEFT JOIN ac_UserDefinedFieldValues udfv ON pe.UserID = udfv.UserId
 WHERE udfv.UserDefinedFieldId = {2}
 
-select * from #PayrollExport]]>
+select * from #PayrollExport order by UserId]]>
   </SqlScript>
 </SqlScripts>

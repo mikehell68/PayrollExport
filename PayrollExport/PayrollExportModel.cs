@@ -156,6 +156,7 @@ namespace PayrollExport
 
             long currentUserId = -1;
             long currentRoleId = -1;
+            int currentPaySchemeId = -1;
             int workedJobCount = 0;
             
             var userDetailsCsv = "";
@@ -168,6 +169,11 @@ namespace PayrollExport
 
             foreach (DataRow row in payrollResultSet.Tables[0].Rows)
             {
+                if (payrollResultSet.Tables[0].Rows.IndexOf(row) == payrollResultSet.Tables[0].Rows.Count - 1)
+                {
+                    Console.WriteLine("lastline");
+                }
+
                 if (currentUserId != (long)row["UserId"])
                 {
                     if (workedJobCount != 0 && workedJobCount < PayrollExportConfiguration.WorkedJobsPerRow)
@@ -207,9 +213,12 @@ namespace PayrollExport
 
                     currentUserId = (long) row["UserId"];
                     currentRoleId = (int) row["RoleId"];
+                    currentPaySchemeId = (int)row["PayschemeVersionID"];
                     workedJobCount = 1;
                 }
-                else if (currentUserId == (long)row["UserId"] && currentRoleId != (int)row["RoleId"] && workedJobCount <= PayrollExportConfiguration.WorkedJobsPerRow)
+                else if ((currentUserId == (long)row["UserId"] && currentRoleId != (int)row["RoleId"]) ||
+                    (currentUserId == (long)row["UserId"] && currentRoleId == (int)row["RoleId"] && currentPaySchemeId != (int)row["PayschemeVersionID"]) &&
+                    workedJobCount <= PayrollExportConfiguration.WorkedJobsPerRow)
                 {
                     jobsDetailsCsv += "," + 
                                          QuoteIfCommaExists((string)row["RoleName"]) + "," + 
