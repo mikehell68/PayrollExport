@@ -167,83 +167,88 @@ namespace PayrollExport
             decimal chargeTipsTotal = 0;
             decimal declaredTipsTotal = 0;
 
+            bool savePreviousRecord = false;
+
             foreach (DataRow row in payrollResultSet.Tables[0].Rows)
             {
-                if (payrollResultSet.Tables[0].Rows.IndexOf(row) == payrollResultSet.Tables[0].Rows.Count - 1)
+                if (currentUserId != (long) row["UserId"]) // moving on to new user processing
                 {
-                    Console.WriteLine("lastline");
-                }
-
-                if (currentUserId != (long)row["UserId"])
-                {
-                    if (workedJobCount != 0 && workedJobCount < PayrollExportConfiguration.WorkedJobsPerRow)
+                    // complete processing of previous user...
+                    // add the blank csv fields for the remaing worked jobs fields
+                    if (savePreviousRecord)
                     {
                         for (int i = workedJobCount; i <= PayrollExportConfiguration.WorkedJobsPerRow; i++)
                             jobsDetailsCsv += ",,,,,,,";
 
-                        var totalsCsv = string.Format("{0},{1},{2},{3}", netSalesTotal, chargedSalesTotal, chargeTipsTotal, declaredTipsTotal);
-                        sb.AppendLine(userDetailsCsv + totalsCsv + jobsDetailsCsv);
+                        // create the total sales/tips csv line
+                        var totalsCsv = string.Format("{0},{1},{2},{3}", netSalesTotal, chargedSalesTotal,
+                            chargeTipsTotal, declaredTipsTotal);
 
-                        netSalesTotal = 0;
-                        chargedSalesTotal = 0;
-                        chargeTipsTotal = 0;
-                        declaredTipsTotal = 0;
+                        // add user to the list of jobs
+                        sb.AppendLine(userDetailsCsv + totalsCsv + jobsDetailsCsv);
+                        userDetailsCsv = "";
                     }
 
-                    userDetailsCsv = QuoteIfCommaExists((string) row["LastName"]) + "," +
-                                     QuoteIfCommaExists((string) row["FirstName"]) + "," +
-                                     row["UserId"] + ",";
+                    currentUserId = (long)row["UserId"];
 
                     if (PayrollExportConfiguration.UseSocialSecurityNo)
-                        userDetailsCsv = row["SSNo"] +","+ userDetailsCsv;
-                    
-                    netSalesTotal += (decimal)row["NetSales"];
-                    chargedSalesTotal += (decimal)row["NetSales"];
-                    chargeTipsTotal += (decimal)row["ChargeTips"];
-                    declaredTipsTotal += (decimal)row["DeclaredTips"];
+                        userDetailsCsv = row["SSNo"] + ",";
 
-                    jobsDetailsCsv = "," + 
-                                         QuoteIfCommaExists((string)row["RoleName"]) + "," + 
-                                         row["RoleId"] + "," + 
+                    userDetailsCsv += QuoteIfCommaExists((string)row["LastName"]) + "," +
+                                     QuoteIfCommaExists((string)row["FirstName"]) + "," +
+                                     row["UserId"] + ",";
+
+                    netSalesTotal = (decimal)row["NetSales"];
+                    chargedSalesTotal = (decimal)row["NetSales"];
+                    chargeTipsTotal = (decimal)row["ChargeTips"];
+                    declaredTipsTotal = (decimal)row["DeclaredTips"];
+
+                    jobsDetailsCsv = "," +
+                                         QuoteIfCommaExists((string)row["RoleName"]) + "," +
+                                         row["RoleId"] + "," +
                                          row["RolePayType"] + "," +
-                                         row["StandardHours"] + "," + 
-                                         row["StandardRate"] + "," + 
+                                         row["StandardHours"] + "," +
+                                         row["StandardRate"] + "," +
                                          row["OverTimeHours"] + "," +
                                          row["OverTimeRate"];
 
-                    currentUserId = (long) row["UserId"];
-                    currentRoleId = (int) row["RoleId"];
-                    currentPaySchemeId = (int)row["PayschemeVersionID"];
                     workedJobCount = 1;
+                    savePreviousRecord = true;
+                    continue;
                 }
-                else if ((currentUserId == (long)row["UserId"] && currentRoleId != (int)row["RoleId"]) ||
-                    (currentUserId == (long)row["UserId"] && currentRoleId == (int)row["RoleId"] && currentPaySchemeId != (int)row["PayschemeVersionID"]) &&
-                    workedJobCount <= PayrollExportConfiguration.WorkedJobsPerRow)
-                {
-                    jobsDetailsCsv += "," + 
-                                         QuoteIfCommaExists((string)row["RoleName"]) + "," + 
+
+                jobsDetailsCsv += "," +
+                                         QuoteIfCommaExists((string)row["RoleName"]) + "," +
                                          row["RoleId"] + "," + row["RolePayType"] + "," +
-                                         row["StandardHours"] + "," + 
-                                         row["StandardRate"] + "," + 
+                                         row["StandardHours"] + "," +
+                                         row["StandardRate"] + "," +
                                          row["OverTimeHours"] + "," +
                                          row["OverTimeRate"];
 
-                    netSalesTotal += (decimal)row["NetSales"];
-                    chargedSalesTotal += (decimal)row["NetSales"];
-                    chargeTipsTotal += (decimal)row["ChargeTips"];
-                    declaredTipsTotal += (decimal)row["DeclaredTips"];
+                netSalesTotal += (decimal)row["NetSales"];
+                chargedSalesTotal += (decimal)row["NetSales"];
+                chargeTipsTotal += (decimal)row["ChargeTips"];
+                declaredTipsTotal += (decimal)row["DeclaredTips"];
 
-                    workedJobCount++;
+                workedJobCount++;
+
+                // if last record write out data
+                if (payrollResultSet.Tables[0].Rows.IndexOf(row) == payrollResultSet.Tables[0].Rows.Count - 1) 
+                {
+                    for (int i = workedJobCount; i <= PayrollExportConfiguration.WorkedJobsPerRow; i++)
+                        jobsDetailsCsv += ",,,,,,,";
+
+                    // create the total sales/tips csv line
+                    var totalsCsv = string.Format("{0},{1},{2},{3}", netSalesTotal, chargedSalesTotal,
+                        chargeTipsTotal, declaredTipsTotal);
+
+                    // add user to the list of jobs
+                    sb.AppendLine(userDetailsCsv + totalsCsv + jobsDetailsCsv);
                 }
             }
             
             if(!Directory.Exists(PayrollExportConfiguration.ExportFileSaveLocation))
                 Directory.CreateDirectory(PayrollExportConfiguration.ExportFileSaveLocation);
-
-            //if(!Directory.Exists(@"PayrollExportFiles\Export"))
-            //{
-            //    Directory.CreateDirectory(@"PayrollExportFiles\Export");
-            //}
 
             if (!Directory.Exists(PayrollExportConfiguration.ExportFileBackupLocation))
             {
