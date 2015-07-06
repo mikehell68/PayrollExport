@@ -1174,28 +1174,11 @@ PIVOT
 ORDER By UserID
 --FOR XML RAW ('Data'), ROOT('PayrollExport')
 
-
 update #PayrollExport
-SET RolePayType = pt.RolePayType
-FROM #PayrollExport pe 
-JOIN
-(
-	SELECT ur.UserId, 
-	       ur.RoleId, 
-	       CASE WHEN pf.Id = 1 THEN 'H' ELSE 'S' END AS RolePayType,
-	       ISNULL(upo.CurrentUserPayRateOverrideVersionId, ps.CurrentPaySchemeVersionId) AS PaySchemeVersionId
-	FROM ac_UserRoles ur
-	JOIN ac_PayScheme ps ON ur.PaySchemeId = ps.Id
-	JOIN ac_PayFrequency pf ON ps.PayFrequencyId = pf.Id
-	JOIN ac_PaySchemeVersion psv ON ps.CurrentPaySchemeVersionId = psv.Id
-	LEFT JOIN ac_UserPayRateOverride upo ON ur.UserId = upo.UserId and ps.Id = upo.PaySchemeId
-  --WHERE ur.Deleted  = 0
-  --AND ps.Deleted = 0
-  --AND pf.Deleted = 0
-  --AND psv.Deleted = 0
-  --AND upo.Deleted = 0
-) pt
-ON pe.UserID = pt.UserId AND pe.RoleID = pt.RoleId AND pe.PayschemeVersionID = pt.PaySchemeVersionId
+SET RolePayType = CASE WHEN ps.PayFrequencyId = 1 THEN 'H' ELSE 'S' END
+FROM #PayrollExport pe
+	JOIN ac_UserRoles ur on ur.UserId = pe.UserID and ur.RoleId = pe.RoleID
+	JOIN ac_PayScheme ps on ps.RoleId = pe.RoleID and ps.Id = ur.PaySchemeId
 
 UPDATE #PayrollExport
 SET SSNo = udfv.Value
